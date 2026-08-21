@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 
+const pool = require("./db/pool");
 const newsletterRouter = require("./routes/newsletter");
 const spaceBookingRouter = require("./routes/spaceBooking");
 
@@ -27,6 +28,13 @@ app.use("/api/newsletter", newsletterRouter);
 app.use("/api/space-booking", spaceBookingRouter);
 
 const PORT = process.env.PORT || 4010;
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`Wellness India Expo backend listening on port ${PORT}`);
+
+  try {
+    await pool.query("SELECT 1");
+    console.log(`Database connected (${process.env.DB_NAME || "wellness_india_expo"} @ ${process.env.DB_HOST || "localhost"}:${process.env.DB_PORT || 3306})`);
+  } catch (err) {
+    console.error(`Database connection FAILED: ${err.message}`);
+  }
 });
