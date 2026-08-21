@@ -4,8 +4,10 @@ const pool = require("../db/pool");
 const router = express.Router();
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const MOBILE_RE = /^[0-9]{6,20}$/;
-const NAME_RE = /^.{2,30}$/;
+const MOBILE_RE = /^[0-9]{10}$/;
+const NAME_RE = /^[A-Za-z\s'-]{2,30}$/;
+const ORG_RE = /^.{2,30}$/;
+const CITY_RE = /^[A-Za-z\s'-]{2,50}$/;
 
 const REQUIRED_FIELDS = [
   "firstName",
@@ -18,6 +20,26 @@ const REQUIRED_FIELDS = [
   "mobileNo"
 ];
 
+async function verifyRecaptcha(token, remoteIp) {
+  const secret = process.env.RECAPTCHA_SECRET_KEY;
+  if (!secret) {
+    // Not configured yet — don't block submissions while the site key/secret are being set up.
+    return true;
+  }
+  if (!token) return false;
+
+  const params = new URLSearchParams({ secret, response: token });
+  if (remoteIp) params.set("remoteip", remoteIp);
+
+  const res = await fetch("https://www.google.com/recaptcha/api/siteverify", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: params.toString()
+  });
+  const body = await res.json();
+  return body.success === true;
+}
+
 router.post("/", async (req, res) => {
   const data = {};
   for (const key of REQUIRED_FIELDS) {
@@ -25,6 +47,7 @@ router.post("/", async (req, res) => {
   }
   data.designation = String(req.body.designation || "").trim();
   data.shellSpace = String(req.body.shellSpace || "").trim();
+  data.recaptchaToken = String(req.body.recaptchaToken || "").trim();
 
   const missing = REQUIRED_FIELDS.filter((key) => !data[key]);
   if (missing.length > 0) {
@@ -36,15 +59,29 @@ router.post("/", async (req, res) => {
   }
 
   if (!MOBILE_RE.test(data.mobileNo)) {
-    return res.status(400).json({ message: "Please enter a valid mobile number (digits only, 6-20 characters)." });
+    return res.status(400).json({ message: "Please enter a valid 10-digit mobile number." });
   }
 
   if (!NAME_RE.test(data.firstName) || !NAME_RE.test(data.lastName)) {
-    return res.status(400).json({ message: "First and last name must be between 2 and 30 characters." });
+    return res.status(400).json({ message: "First and last name must be letters only, 2-30 characters." });
   }
 
-  if (!NAME_RE.test(data.organisation)) {
+  if (!ORG_RE.test(data.organisation)) {
     return res.status(400).json({ message: "Organisation name must be between 2 and 30 characters." });
+  }
+
+  if (!CITY_RE.test(data.city)) {
+    return res.status(400).json({ message: "City must be letters only, 2-50 characters." });
+  }
+
+  try {
+    const recaptchaOk = await verifyRecaptcha(data.recaptchaToken, req.ip);
+    if (!recaptchaOk) {
+      return res.status(400).json({ message: "Captcha verification failed. Please try again." });
+    }
+  } catch (err) {
+    console.error("reCAPTCHA verification request failed:", err);
+    return res.status(502).json({ message: "Could not verify captcha right now. Please try again." });
   }
 
   try {

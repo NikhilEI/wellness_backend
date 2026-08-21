@@ -23,5 +23,11 @@ CREATE TABLE IF NOT EXISTS space_bookings (
   country VARCHAR(100) NOT NULL,
   mobile_no VARCHAR(20) NOT NULL,
   shell_space VARCHAR(255) NULL,
+  -- Reserved for future use — not currently collected by the form or written by the API.
+  business_intrest VARCHAR(100) NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
+
+-- CREATE TABLE ... IF NOT EXISTS won't add this column to a table that already exists
+-- (e.g. the UAT database). Run this once there instead:
+-- ALTER TABLE space_bookings MODIFY business_intrest VARCHAR(100) NULL;
