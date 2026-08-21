@@ -1,0 +1,27 @@
+CREATE DATABASE IF NOT EXISTS wellness_india_expo
+  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+USE wellness_india_expo;
+
+CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  email VARCHAR(255) NOT NULL,
+  source_page VARCHAR(100) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_newsletter_email (email)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS space_bookings (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  first_name VARCHAR(30) NOT NULL,
+  last_name VARCHAR(30) NOT NULL,
+  organisation VARCHAR(100) NOT NULL,
+  designation VARCHAR(100) NULL,
+  email VARCHAR(255) NOT NULL,
+  learn_about_expo VARCHAR(50) NOT NULL,
+  city VARCHAR(100) NOT NULL,
+  country VARCHAR(100) NOT NULL,
+  mobile_no VARCHAR(20) NOT NULL,
+  shell_space VARCHAR(255) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
