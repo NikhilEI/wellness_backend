@@ -26,7 +26,7 @@ app.get("/api/health", (req, res) => {
 app.use("/api/newsletter", newsletterRouter);
 app.use("/api/space-booking", spaceBookingRouter);
 
-const PORT = process.env.PORT || 4001;
+const PORT = process.env.PORT || 4010;
 app.listen(PORT, () => {
   console.log(`Wellness India Expo backend listening on port ${PORT}`);
 });

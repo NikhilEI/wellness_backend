@@ -22,20 +22,21 @@ Node.js (Express) + MySQL API that powers two forms on the site in `../html`:
    ```
    npm start
    ```
-   It listens on `PORT` from `.env` (default `4000`).
+   It listens on `PORT` from `.env` (default `4010`).
 
 ## Serving the frontend against this API
 
-The `html/` folder is plain static HTML — serve it with any static file server, e.g.:
+Two frontends can point at this API:
 
-```
-npx serve ../html -l 8080
-```
+- `../latest` (Next.js) — `npm run dev` / `npm start` there both run on port `3010`
+  (see its `package.json`). It reads `NEXT_PUBLIC_API_BASE_URL` from `.env.local`
+  (default `http://localhost:4010/api`).
+- `../html` — plain static HTML, served with any static file server, e.g.
+  `npx serve ../html -l 8080`. It reads `window.WELLNESS_API_BASE` if set, otherwise
+  falls back to `http://localhost:4010/api` (hardcoded in `js/site-forms.js`).
 
-Set `CORS_ORIGIN` in `.env` to match whatever origin serves the site (default assumes
-`http://localhost:8080`). If the frontend runs on a different host/port, either update
-`CORS_ORIGIN` or set `window.WELLNESS_API_BASE = "http://your-api-host:4000/api"` in a
-`<script>` tag before `js/site-forms.js` loads on each page.
+Either way, `CORS_ORIGIN` in `.env` must include whatever origin is actually serving
+the frontend — it currently lists `http://localhost:8080` and `http://localhost:3010`.
 
 ## Endpoints
 
