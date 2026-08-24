@@ -5,6 +5,9 @@ const cors = require("cors");
 const pool = require("./db/pool");
 const newsletterRouter = require("./routes/newsletter");
 const spaceBookingRouter = require("./routes/spaceBooking");
+const otpRouter = require("./routes/otp");
+const visitorRegistrationRouter = require("./routes/visitorRegistration");
+const brochureDownloadRouter = require("./routes/brochureDownload");
 
 const app = express();
 
@@ -26,6 +29,9 @@ app.get("/api/health", (req, res) => {
 
 app.use("/api/newsletter", newsletterRouter);
 app.use("/api/space-booking", spaceBookingRouter);
+app.use("/api/otp", otpRouter);
+app.use("/api/visitor-registration", visitorRegistrationRouter);
+app.use("/api/brochure-download", brochureDownloadRouter);
 
 const PORT = process.env.PORT || 4010;
 app.listen(PORT, async () => {

@@ -31,3 +31,43 @@ CREATE TABLE IF NOT EXISTS space_bookings (
 -- CREATE TABLE ... IF NOT EXISTS won't add this column to a table that already exists
 -- (e.g. the UAT database). Run this once there instead:
 -- ALTER TABLE space_bookings MODIFY business_intrest VARCHAR(100) NULL;
+
+CREATE TABLE IF NOT EXISTS visitor_registrations (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  registration_id VARCHAR(20) NOT NULL,
+  title VARCHAR(10) NOT NULL,
+  first_name VARCHAR(100) NOT NULL,
+  last_name VARCHAR(100) NOT NULL,
+  organisation VARCHAR(150) NULL,
+  designation VARCHAR(100) NOT NULL,
+  department VARCHAR(100) NULL,
+  country VARCHAR(100) NOT NULL,
+  country_code VARCHAR(10) NOT NULL,
+  state VARCHAR(100) NOT NULL,
+  city VARCHAR(100) NOT NULL,
+  mobile VARCHAR(20) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  otp_verified_via VARCHAR(10) NOT NULL,
+  visit_objective VARCHAR(150) NOT NULL,
+  product_interests JSON NOT NULL,
+  terms_accepted TINYINT(1) NOT NULL DEFAULT 0,
+  marketing_consent TINYINT(1) NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_visitor_registration_id (registration_id),
+  UNIQUE KEY uq_visitor_email (email),
+  UNIQUE KEY uq_visitor_mobile (mobile)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS brochure_downloads (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  full_name VARCHAR(100) NOT NULL,
+  designation VARCHAR(100) NOT NULL,
+  company_name VARCHAR(150) NOT NULL,
+  industry VARCHAR(150) NULL,
+  interest VARCHAR(150) NULL,
+  email VARCHAR(255) NOT NULL,
+  country VARCHAR(100) NOT NULL,
+  country_code VARCHAR(10) NOT NULL,
+  mobile VARCHAR(20) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;

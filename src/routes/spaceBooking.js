@@ -1,5 +1,6 @@
 const express = require("express");
 const pool = require("../db/pool");
+const { sendMail, escapeHtml } = require("../lib/mailer");
 
 const router = express.Router();
 
@@ -103,6 +104,32 @@ router.post("/", async (req, res) => {
       ]
     );
     res.status(201).json({ message: "Booking enquiry submitted successfully." });
+
+    const fields = [
+      ["First name", data.firstName],
+      ["Last name", data.lastName],
+      ["Organisation", data.organisation],
+      ["Designation", data.designation],
+      ["Email", data.email],
+      ["How they heard about the expo", data.learnAboutExpo],
+      ["City", data.city],
+      ["Country", data.country],
+      ["Mobile no.", data.mobileNo],
+      ["Shell space", data.shellSpace]
+    ].filter(([, value]) => value);
+
+    sendMail({
+      to: data.email,
+      subject: "Thanks for your enquiry — Wellness India Expo 2027",
+      text:
+        `Thanks for your space booking enquiry for Wellness India Expo 2027, ${data.firstName}. Here's what you submitted:\n\n` +
+        fields.map(([label, value]) => `${label}: ${value}`).join("\n"),
+      html:
+        `<p>Thanks for your space booking enquiry for <strong>Wellness India Expo 2027</strong>, ${escapeHtml(data.firstName)}. Here's what you submitted:</p>` +
+        `<table cellpadding="4" cellspacing="0">` +
+        fields.map(([label, value]) => `<tr><td><strong>${escapeHtml(label)}</strong></td><td>${escapeHtml(value)}</td></tr>`).join("") +
+        `</table>`
+    });
   } catch (err) {
     console.error("Space booking submission failed:", err);
     res.status(500).json({ message: "Could not submit your enquiry. Please try again later." });

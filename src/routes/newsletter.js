@@ -1,5 +1,6 @@
 const express = require("express");
 const pool = require("../db/pool");
+const { sendMail, escapeHtml } = require("../lib/mailer");
 
 const router = express.Router();
 
@@ -28,6 +29,13 @@ router.post("/", async (req, res) => {
       [email, sourcePage]
     );
     res.status(201).json({ message: "Subscribed successfully." });
+
+    sendMail({
+      to: email,
+      subject: "Thanks for subscribing — Wellness India Expo 2027",
+      text: `Thanks for subscribing to the Wellness India Expo 2027 newsletter with ${email}. We'll keep you posted on the latest updates.`,
+      html: `<p>Thanks for subscribing to the <strong>Wellness India Expo 2027</strong> newsletter with <strong>${escapeHtml(email)}</strong>.</p><p>We'll keep you posted on the latest updates.</p>`
+    });
   } catch (err) {
     if (err.code === "ER_DUP_ENTRY") {
       // Two simultaneous submits for the same email raced past the SELECT above.
