@@ -7,13 +7,20 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "db:migrate": "node src/db/migrate.js"
+    "db:migrate": "node src/db/migrate.js",
+    "db:migrate:exhibitor-zone": "node src/db/migrateExhibitorZone.js",
+    "db:seed:exhibitor-zone": "node src/db/seedExhibitorZone.js"
   },
   "dependencies": {
+    "@node-rs/argon2": "^2.1.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "multer": "^2.2.0",
     "mysql2": "^3.11.0",
-    "nodemailer": "^9.0.5"
+    "nodemailer": "^9.0.5",
+    "qrcode": "^1.5.4",
+    "zod": "^4.4.3"
   }
 }
