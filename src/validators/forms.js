@@ -60,6 +60,43 @@ const safetyFireNocSchema = z.object({
   contactPhone: z.string().trim().min(6).max(20)
 });
 
+const translatorsSchema = z.object({
+  requests: z
+    .array(
+      z.object({
+        role: z.string().trim().min(1).max(150),
+        fromLanguage: z.string().trim().min(1).max(100),
+        toLanguage: z.string().trim().min(1).max(100),
+        personnel: z.coerce.number().int().positive().max(100),
+        date: z.string().date()
+      })
+    )
+    .min(1)
+});
+
+const securityPersonnelSchema = z.object({
+  requests: z
+    .array(
+      z.object({
+        personnelType: z.enum(["Security Guard", "Security Supervisor"]),
+        personnel: z.coerce.number().int().positive().max(100),
+        fromDate: z.string().date(),
+        fromTime: z.string().trim().min(1).max(10),
+        toDate: z.string().date(),
+        toTime: z.string().trim().min(1).max(10)
+      })
+    )
+    .min(1)
+});
+
+const additionalPowerSupplySchema = z.object({
+  kwRequired: z.coerce.number().positive().max(10000)
+});
+
+const outdoorSpaceSchema = z.object({
+  sqmsRequired: z.coerce.number().positive().max(100000)
+});
+
 const FORM_SCHEMAS = new Map([
   ["badges", badgesSchema],
   ["stall-design-approval", stallDesignApprovalSchema],
@@ -68,7 +105,11 @@ const FORM_SCHEMAS = new Map([
   ["material-movement", materialMovementSchema],
   ["catering-fnb", cateringFnbSchema],
   ["av-equipment", avEquipmentSchema],
-  ["safety-fire-noc", safetyFireNocSchema]
+  ["safety-fire-noc", safetyFireNocSchema],
+  ["translators", translatorsSchema],
+  ["security-personnel", securityPersonnelSchema],
+  ["additional-power-supply", additionalPowerSupplySchema],
+  ["outdoor-space", outdoorSpaceSchema]
 ]);
 
 module.exports = { FORM_SCHEMAS };

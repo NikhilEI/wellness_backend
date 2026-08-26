@@ -12,7 +12,10 @@ const ALLOWED_MIME_TYPES = new Set([
   "image/png",
   "image/webp",
   "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  // Adobe Illustrator (.ai) — browsers/OSes report either of these depending on version.
+  "application/illustrator",
+  "application/postscript"
 ]);
 
 fs.mkdirSync(UPLOAD_ROOT, { recursive: true });
