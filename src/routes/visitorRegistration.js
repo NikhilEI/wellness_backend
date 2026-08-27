@@ -2,7 +2,7 @@ const crypto = require("crypto");
 const express = require("express");
 const pool = require("../db/pool");
 const otpStore = require("../lib/otpStore");
-const { sendMail, buildConfirmationEmail } = require("../lib/mailer");
+const { sendMail, buildConfirmationEmail, getBccList } = require("../lib/mailer");
 
 const router = express.Router();
 
@@ -192,6 +192,7 @@ router.post("/", async (req, res) => {
 
     sendMail({
       to: data.email,
+      bcc: getBccList("BCC_VISITOR_REGISTRATION"),
       subject: "Visitor Registration Confirmed — Wellness India Expo 2027",
       text,
       html

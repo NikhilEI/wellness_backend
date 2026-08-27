@@ -1,6 +1,6 @@
 const express = require("express");
 const pool = require("../db/pool");
-const { sendMail, buildConfirmationEmail } = require("../lib/mailer");
+const { sendMail, buildConfirmationEmail, getBccList } = require("../lib/mailer");
 
 const router = express.Router();
 
@@ -133,6 +133,7 @@ router.post("/", async (req, res) => {
 
     sendMail({
       to: data.email,
+      bcc: getBccList("BCC_SPEAKER_REGISTRATION"),
       subject: "Thanks for your speaker registration — Wellness India Expo 2027",
       text,
       html

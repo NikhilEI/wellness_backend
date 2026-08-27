@@ -21,7 +21,7 @@ function getTransporter() {
 // should never block/error the form submission it's attached to — every failure mode here
 // (unconfigured SMTP, a bad transporter config, a send failure) is caught and logged, never
 // thrown, so callers can call this fire-and-forget without a try/catch of their own.
-async function sendMail({ to, subject, text, html }) {
+async function sendMail({ to, bcc, subject, text, html }) {
   try {
     const client = getTransporter();
     if (!client) {
@@ -32,6 +32,7 @@ async function sendMail({ to, subject, text, html }) {
     await client.sendMail({
       from: process.env.SMTP_FROM || process.env.SMTP_USER || '"Wellness India Expo" <noreply@wellnessindiaexpo.com>',
       to,
+      bcc: bcc && bcc.length > 0 ? bcc : undefined,
       subject,
       text,
       html
@@ -39,6 +40,17 @@ async function sendMail({ to, subject, text, html }) {
   } catch (err) {
     console.error(`Failed to send email "${subject}" to ${to}:`, err);
   }
+}
+
+// Reads a comma-separated internal-notification list from an env var (e.g.
+// BCC_SPACE_BOOKING=princes@eigroup.in,pankaj@eigroup.in) so who gets BCC'd on each form
+// can be changed per-environment without a code change or redeploy. Returns [] (meaning "no
+// bcc") if the var is unset or blank.
+function getBccList(envVarName) {
+  return String(process.env[envVarName] || "")
+    .split(",")
+    .map((email) => email.trim())
+    .filter(Boolean);
 }
 
 function escapeHtml(value) {
@@ -71,4 +83,4 @@ function buildConfirmationEmail({ firstName, eventName, actionPhrase, fields }) 
   return { text, html };
 }
 
-module.exports = { sendMail, escapeHtml, buildConfirmationEmail };
+module.exports = { sendMail, escapeHtml, buildConfirmationEmail, getBccList };
