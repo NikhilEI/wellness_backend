@@ -16,5 +16,7 @@ router.use("/mandatory-forms", require("./mandatoryForms"));
 router.use("/notifications", require("./notifications"));
 router.use("/admin/dashboard", require("./admin/dashboard"));
 router.use("/admin/users", require("./admin/users"));
+router.use("/admin/registrations", require("./admin/registrations"));
+router.use("/admin/notifications", require("./admin/notifications"));
 
 module.exports = router;

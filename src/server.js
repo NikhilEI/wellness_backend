@@ -10,6 +10,7 @@ const otpRouter = require("./routes/otp");
 const visitorRegistrationRouter = require("./routes/visitorRegistration");
 const speakerRegistrationRouter = require("./routes/speakerRegistration");
 const mediaRegistrationRouter = require("./routes/mediaRegistration");
+const hostedBuyerRegistrationRouter = require("./routes/hostedBuyerRegistration");
 const brochureDownloadRouter = require("./routes/brochureDownload");
 const exhibitorZoneRouter = require("./routes/exhibitorZone");
 const { notFoundHandler, errorHandler } = require("./middleware/errorHandler");
@@ -40,6 +41,7 @@ app.use("/api/otp", otpRouter);
 app.use("/api/visitor-registration", visitorRegistrationRouter);
 app.use("/api/speaker-registration", speakerRegistrationRouter);
 app.use("/api/media-registration", mediaRegistrationRouter);
+app.use("/api/hosted-buyer-registration", hostedBuyerRegistrationRouter);
 app.use("/api/brochure-download", brochureDownloadRouter);
 app.use("/api/exhibitor-zone", exhibitorZoneRouter);
 

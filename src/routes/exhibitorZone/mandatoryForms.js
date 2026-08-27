@@ -77,6 +77,48 @@ router.get(
   })
 );
 
+// Admin management of the form registry itself — unlike the exhibitor-facing
+// GET / above, this is NOT filtered to is_active = 1, so a disabled form can
+// still be found here and re-enabled.
+router.get(
+  "/admin/definitions",
+  requireRole(...ADMIN_ROLES),
+  asyncHandler(async (req, res) => {
+    const [rows] = await pool.query(
+      "SELECT * FROM mandatory_form_definitions WHERE event_id = ? ORDER BY sort_order",
+      [req.user.eventId]
+    );
+    res.json({ definitions: rows });
+  })
+);
+
+router.patch(
+  "/admin/definitions/:id",
+  requireRole(...ADMIN_ROLES),
+  asyncHandler(async (req, res) => {
+    const columnMap = { name: "name", description: "description", sortOrder: "sort_order", isActive: "is_active" };
+
+    const sets = [];
+    const values = [];
+    for (const [key, column] of Object.entries(columnMap)) {
+      if (req.body[key] !== undefined) {
+        sets.push(`${column} = ?`);
+        values.push(req.body[key]);
+      }
+    }
+    if (sets.length === 0) throw new ApiError(400, "No fields to update.");
+
+    values.push(req.params.id, req.user.eventId);
+    const [result] = await pool.query(
+      `UPDATE mandatory_form_definitions SET ${sets.join(", ")} WHERE id = ? AND event_id = ?`,
+      values
+    );
+    if (result.affectedRows === 0) throw new ApiError(404, "Form definition not found.");
+
+    res.json({ message: "Form definition updated." });
+  })
+);
+
 router.get(
   "/product-categories",
   asyncHandler(async (req, res) => {

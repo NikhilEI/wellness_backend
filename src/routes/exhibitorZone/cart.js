@@ -62,6 +62,38 @@ router.get(
 );
 
 router.get(
+  "/all",
+  requireRole(...ADMIN_ROLES),
+  asyncHandler(async (req, res) => {
+    const [carts] = await pool.query(
+      `SELECT c.id, c.exhibitor_profile_id, c.status, c.updated_at, comp.display_name AS company_name
+       FROM carts c
+       JOIN exhibitor_event_profiles eep ON eep.id = c.exhibitor_profile_id
+       JOIN companies comp ON comp.id = eep.company_id
+       WHERE c.event_id = ? AND c.status = 'active'
+       ORDER BY c.updated_at DESC`,
+      [req.user.eventId]
+    );
+
+    const summaries = await Promise.all(
+      carts.map(async (cart) => {
+        const details = await loadCartWithItems(cart.id);
+        return {
+          profileId: cart.exhibitor_profile_id,
+          companyName: cart.company_name,
+          status: cart.status,
+          itemCount: details.items.reduce((sum, i) => sum + i.quantity, 0),
+          grandTotal: details.grandTotal,
+          updatedAt: cart.updated_at
+        };
+      })
+    );
+
+    res.json({ carts: summaries });
+  })
+);
+
+router.get(
   "/:profileId",
   requireRole(...ADMIN_ROLES),
   asyncHandler(async (req, res) => {
@@ -81,43 +113,55 @@ const addItemSchema = z.object({
   quantity: z.coerce.number().int().positive().default(1)
 });
 
+async function addItemToCart(profileId, userId, eventId, serviceItemId, quantity) {
+  const [itemRows] = await pool.query("SELECT * FROM service_items WHERE id = ? AND event_id = ? AND is_active = 1 LIMIT 1", [
+    serviceItemId,
+    eventId
+  ]);
+  const item = itemRows[0];
+  if (!item) throw new ApiError(404, "Catalogue item not found.");
+
+  if (quantity < item.min_order_qty) {
+    throw new ApiError(400, `Minimum order quantity for this item is ${item.min_order_qty}.`);
+  }
+  if (item.max_order_qty && quantity > item.max_order_qty) {
+    throw new ApiError(400, `Maximum order quantity for this item is ${item.max_order_qty}.`);
+  }
+  if (item.inventory_total !== null) {
+    const available = item.inventory_total - item.inventory_reserved - item.inventory_sold;
+    if (quantity > available) {
+      throw new ApiError(409, `Only ${available} unit(s) of this item are available.`);
+    }
+  }
+
+  const surchargePct = item.late_surcharge_from && new Date(item.late_surcharge_from) < new Date() ? item.late_surcharge_pct : 0;
+  const cart = await getOrCreateCart(profileId, userId, eventId);
+
+  await pool.query(
+    `INSERT INTO cart_items (cart_id, service_item_id, quantity, unit_price, surcharge_pct, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, NOW(), NOW())
+     ON DUPLICATE KEY UPDATE quantity = VALUES(quantity), unit_price = VALUES(unit_price), surcharge_pct = VALUES(surcharge_pct), updated_at = NOW()`,
+    [cart.id, serviceItemId, quantity, item.price_inr, surchargePct]
+  );
+}
+
+async function removeItemFromCart(profileId, eventId, itemId) {
+  const [cartRows] = await pool.query(
+    "SELECT id FROM carts WHERE event_id = ? AND exhibitor_profile_id = ? AND status = 'active' LIMIT 1",
+    [eventId, profileId]
+  );
+  if (cartRows.length === 0) throw new ApiError(404, "Cart not found.");
+
+  const [result] = await pool.query("DELETE FROM cart_items WHERE id = ? AND cart_id = ?", [itemId, cartRows[0].id]);
+  if (result.affectedRows === 0) throw new ApiError(404, "Cart item not found.");
+}
+
 router.post(
   "/items",
   validate(addItemSchema),
   asyncHandler(async (req, res) => {
     const profileId = await resolveOwnProfileId(pool, req);
-    const { serviceItemId, quantity } = req.body;
-
-    const [itemRows] = await pool.query("SELECT * FROM service_items WHERE id = ? AND event_id = ? AND is_active = 1 LIMIT 1", [
-      serviceItemId,
-      req.user.eventId
-    ]);
-    const item = itemRows[0];
-    if (!item) throw new ApiError(404, "Catalogue item not found.");
-
-    if (quantity < item.min_order_qty) {
-      throw new ApiError(400, `Minimum order quantity for this item is ${item.min_order_qty}.`);
-    }
-    if (item.max_order_qty && quantity > item.max_order_qty) {
-      throw new ApiError(400, `Maximum order quantity for this item is ${item.max_order_qty}.`);
-    }
-    if (item.inventory_total !== null) {
-      const available = item.inventory_total - item.inventory_reserved - item.inventory_sold;
-      if (quantity > available) {
-        throw new ApiError(409, `Only ${available} unit(s) of this item are available.`);
-      }
-    }
-
-    const surchargePct = item.late_surcharge_from && new Date(item.late_surcharge_from) < new Date() ? item.late_surcharge_pct : 0;
-    const cart = await getOrCreateCart(profileId, req.user.id, req.user.eventId);
-
-    await pool.query(
-      `INSERT INTO cart_items (cart_id, service_item_id, quantity, unit_price, surcharge_pct, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, NOW(), NOW())
-       ON DUPLICATE KEY UPDATE quantity = VALUES(quantity), unit_price = VALUES(unit_price), surcharge_pct = VALUES(surcharge_pct), updated_at = NOW()`,
-      [cart.id, serviceItemId, quantity, item.price_inr, surchargePct]
-    );
-
+    await addItemToCart(profileId, req.user.id, req.user.eventId, req.body.serviceItemId, req.body.quantity);
     res.status(201).json({ message: "Added to cart." });
   })
 );
@@ -126,18 +170,26 @@ router.delete(
   "/items/:itemId",
   asyncHandler(async (req, res) => {
     const profileId = await resolveOwnProfileId(pool, req);
-    const [cartRows] = await pool.query(
-      "SELECT id FROM carts WHERE event_id = ? AND exhibitor_profile_id = ? AND status = 'active' LIMIT 1",
-      [req.user.eventId, profileId]
-    );
-    if (cartRows.length === 0) throw new ApiError(404, "Cart not found.");
+    await removeItemFromCart(profileId, req.user.eventId, req.params.itemId);
+    res.json({ message: "Removed from cart." });
+  })
+);
 
-    const [result] = await pool.query("DELETE FROM cart_items WHERE id = ? AND cart_id = ?", [
-      req.params.itemId,
-      cartRows[0].id
-    ]);
-    if (result.affectedRows === 0) throw new ApiError(404, "Cart item not found.");
+router.post(
+  "/:profileId/items",
+  requireRole(...ADMIN_ROLES),
+  validate(addItemSchema),
+  asyncHandler(async (req, res) => {
+    await addItemToCart(req.params.profileId, req.user.id, req.user.eventId, req.body.serviceItemId, req.body.quantity);
+    res.status(201).json({ message: "Added to cart." });
+  })
+);
 
+router.delete(
+  "/:profileId/items/:itemId",
+  requireRole(...ADMIN_ROLES),
+  asyncHandler(async (req, res) => {
+    await removeItemFromCart(req.params.profileId, req.user.eventId, req.params.itemId);
     res.json({ message: "Removed from cart." });
   })
 );

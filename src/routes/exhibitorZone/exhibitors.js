@@ -119,6 +119,46 @@ router.patch(
   })
 );
 
+router.patch(
+  "/companies/:companyId",
+  requireRole("super_admin", "organiser"),
+  validate(updateCompanySchema),
+  asyncHandler(async (req, res) => {
+    const fields = req.body;
+    const columnMap = {
+      legalName: "legal_name",
+      displayName: "display_name",
+      companyType: "company_type",
+      industryType: "industry_type",
+      website: "website",
+      addressLine1: "address_line1",
+      addressLine2: "address_line2",
+      city: "city",
+      state: "state",
+      postalCode: "postal_code",
+      country: "country",
+      phone: "phone",
+      email: "email"
+    };
+
+    const sets = [];
+    const values = [];
+    for (const [key, column] of Object.entries(columnMap)) {
+      if (fields[key] !== undefined) {
+        sets.push(`${column} = ?`);
+        values.push(fields[key]);
+      }
+    }
+    if (sets.length === 0) throw new ApiError(400, "No fields to update.");
+
+    values.push(req.params.companyId);
+    const [result] = await pool.query(`UPDATE companies SET ${sets.join(", ")}, updated_at = NOW() WHERE id = ?`, values);
+    if (result.affectedRows === 0) throw new ApiError(404, "Company not found.");
+
+    res.json({ message: "Company updated." });
+  })
+);
+
 router.get(
   "/:profileId",
   requireCompanyAccess(async (req) => {
