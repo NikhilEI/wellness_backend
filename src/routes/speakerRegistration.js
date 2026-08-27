@@ -1,6 +1,6 @@
 const express = require("express");
 const pool = require("../db/pool");
-const { sendMail, escapeHtml } = require("../lib/mailer");
+const { sendMail, buildConfirmationEmail } = require("../lib/mailer");
 
 const router = express.Router();
 
@@ -111,34 +111,31 @@ router.post("/", async (req, res) => {
     );
     res.status(201).json({ message: "Speaker registration submitted successfully." });
 
-    const fields = [
-      ["Title", data.title],
-      ["First name", data.firstName],
-      ["Last name", data.lastName],
-      ["Organisation", data.organisation],
-      ["Designation", data.designation],
-      ["Email", data.email],
-      ["Mobile", data.mobile],
-      ["Address", data.address],
-      ["City", data.city],
-      ["Zip code", data.zipCode],
-      ["State", data.state],
-      ["Country", data.country]
-    ].filter(([, value]) => value);
+    const { text, html } = buildConfirmationEmail({
+      firstName: data.firstName,
+      eventName: "Wellness India Expo 2027 - Speaker Registration",
+      actionPhrase: "a speaker",
+      fields: [
+        ["Title", data.title],
+        ["Full Name", data.firstName],
+        ["Last Name", data.lastName],
+        ["Organisation", data.organisation],
+        ["Designation", data.designation],
+        ["Email", data.email],
+        ["Mobile No", data.mobile],
+        ["Address", data.address],
+        ["City", data.city],
+        ["Zip Code", data.zipCode],
+        ["State", data.state],
+        ["Country", data.country]
+      ]
+    });
 
     sendMail({
       to: data.email,
       subject: "Thanks for your speaker registration — Wellness India Expo 2027",
-      text:
-        `Thanks for registering as a speaker for Wellness India Expo 2027, ${data.firstName}. Here's what you submitted:\n\n` +
-        fields.map(([label, value]) => `${label}: ${value}`).join("\n") +
-        `\n\nOur Conference Committee will review your submission and get in touch with you.`,
-      html:
-        `<p>Thanks for registering as a speaker for <strong>Wellness India Expo 2027</strong>, ${escapeHtml(data.firstName)}. Here's what you submitted:</p>` +
-        `<table cellpadding="4" cellspacing="0">` +
-        fields.map(([label, value]) => `<tr><td><strong>${escapeHtml(label)}</strong></td><td>${escapeHtml(value)}</td></tr>`).join("") +
-        `</table>` +
-        `<p>Our Conference Committee will review your submission and get in touch with you.</p>`
+      text,
+      html
     });
   } catch (err) {
     console.error("Speaker registration submission failed:", err);

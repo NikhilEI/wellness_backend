@@ -2,7 +2,7 @@ const crypto = require("crypto");
 const express = require("express");
 const pool = require("../db/pool");
 const otpStore = require("../lib/otpStore");
-const { sendMail, escapeHtml } = require("../lib/mailer");
+const { sendMail, buildConfirmationEmail } = require("../lib/mailer");
 
 const router = express.Router();
 
@@ -168,15 +168,33 @@ router.post("/", async (req, res) => {
 
     res.status(201).json({ message: "Registration submitted successfully.", registrationId });
 
+    const { text, html } = buildConfirmationEmail({
+      firstName: data.firstName,
+      eventName: "Wellness India Expo 2027 - Visitor Registration",
+      actionPhrase: "a visitor",
+      fields: [
+        ["Registration ID", registrationId],
+        ["Title", data.title],
+        ["Full Name", data.firstName],
+        ["Last Name", data.lastName],
+        ["Organisation", data.organisation],
+        ["Designation", data.designation],
+        ["Department", data.department],
+        ["Email", data.email],
+        ["Mobile No", normalizedMobile],
+        ["City", data.city],
+        ["State", data.state],
+        ["Country", data.country],
+        ["Objective of Visit", data.visitObjective],
+        ["Product Interests", data.productInterests.join(", ")]
+      ]
+    });
+
     sendMail({
       to: data.email,
       subject: "Visitor Registration Confirmed — Wellness India Expo 2027",
-      text:
-        `Thanks for registering as a visitor for Wellness India Expo 2027, ${data.firstName}.\n\n` +
-        `Your registration ID: ${registrationId}\nPlease keep this for your records.`,
-      html:
-        `<p>Thanks for registering as a visitor for <strong>Wellness India Expo 2027</strong>, ${escapeHtml(data.firstName)}.</p>` +
-        `<p>Your registration ID: <strong>${escapeHtml(registrationId)}</strong><br>Please keep this for your records.</p>`
+      text,
+      html
     });
   } catch (err) {
     if (err.code === "ER_DUP_ENTRY") {

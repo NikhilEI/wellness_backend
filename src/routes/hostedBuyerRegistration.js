@@ -1,6 +1,6 @@
 const express = require("express");
 const pool = require("../db/pool");
-const { sendMail, escapeHtml } = require("../lib/mailer");
+const { sendMail, buildConfirmationEmail } = require("../lib/mailer");
 
 const router = express.Router();
 
@@ -117,33 +117,30 @@ router.post("/", async (req, res) => {
     );
     res.status(201).json({ message: "Hosted Buyer registration submitted successfully." });
 
-    const fields = [
-      ["Full Name", data.fullName],
-      ["Designation", data.designation],
-      ["Company", data.company],
-      ["Email", data.email],
-      ["Mobile No.", data.mobile],
-      ["City", data.city],
-      ["Country", data.country],
-      ["Website", data.website],
-      ["No. of Outlets / Channel Partners", data.outlets],
-      ["Company Turnover", data.companyTurnover],
-      ["Company Profile", data.companyProfile]
-    ];
+    const { text, html } = buildConfirmationEmail({
+      firstName: data.fullName.split(" ")[0],
+      eventName: "Wellness India Expo 2027 - Hosted Buyer Programme",
+      actionPhrase: "a hosted buyer",
+      fields: [
+        ["Full Name", data.fullName],
+        ["Designation", data.designation],
+        ["Company", data.company],
+        ["Email", data.email],
+        ["Mobile No", data.mobile],
+        ["City", data.city],
+        ["Country", data.country],
+        ["Website", data.website],
+        ["No. of Outlets / Channel Partners", data.outlets],
+        ["Company Turnover", data.companyTurnover],
+        ["Company Profile", data.companyProfile]
+      ]
+    });
 
     sendMail({
       to: data.email,
       subject: "Thanks for your Hosted Buyer enquiry — Wellness India Expo 2027",
-      text:
-        `Thanks for your Hosted Buyer Programme enquiry for Wellness India Expo 2027, ${data.fullName}. Here's what you submitted:\n\n` +
-        fields.map(([label, value]) => `${label}: ${value}`).join("\n") +
-        `\n\nOur team will get in touch with you for further information.`,
-      html:
-        `<p>Thanks for your Hosted Buyer Programme enquiry for <strong>Wellness India Expo 2027</strong>, ${escapeHtml(data.fullName)}. Here's what you submitted:</p>` +
-        `<table cellpadding="4" cellspacing="0">` +
-        fields.map(([label, value]) => `<tr><td><strong>${escapeHtml(label)}</strong></td><td>${escapeHtml(value)}</td></tr>`).join("") +
-        `</table>` +
-        `<p>Our team will get in touch with you for further information.</p>`
+      text,
+      html
     });
   } catch (err) {
     console.error("Hosted Buyer registration submission failed:", err);

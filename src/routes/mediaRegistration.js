@@ -1,6 +1,6 @@
 const express = require("express");
 const pool = require("../db/pool");
-const { sendMail, escapeHtml } = require("../lib/mailer");
+const { sendMail, buildConfirmationEmail } = require("../lib/mailer");
 
 const router = express.Router();
 
@@ -94,30 +94,27 @@ router.post("/", async (req, res) => {
     );
     res.status(201).json({ message: "Media registration submitted successfully." });
 
-    const fields = [
-      ["Name of media", data.mediaName],
-      ["Press card no.", data.pressCardNo],
-      ["Full name", data.fullName],
-      ["Designation", data.designation],
-      ["Email", data.email],
-      ["City", data.city],
-      ["Country", data.country],
-      ["Mobile", data.mobile]
-    ].filter(([, value]) => value);
+    const { text, html } = buildConfirmationEmail({
+      firstName: data.fullName.split(" ")[0],
+      eventName: "Wellness India Expo 2027 - Media Registration",
+      actionPhrase: "media",
+      fields: [
+        ["Name of Media", data.mediaName],
+        ["Press Card No", data.pressCardNo],
+        ["Full Name", data.fullName],
+        ["Designation", data.designation],
+        ["Email", data.email],
+        ["Mobile No", data.mobile],
+        ["City", data.city],
+        ["Country", data.country]
+      ]
+    });
 
     sendMail({
       to: data.email,
       subject: "Thanks for your media registration — Wellness India Expo 2027",
-      text:
-        `Thanks for registering as media for Wellness India Expo 2027, ${data.fullName}. Here's what you submitted:\n\n` +
-        fields.map(([label, value]) => `${label}: ${value}`).join("\n") +
-        `\n\nAccreditation is subject to acceptance by the communications department. Our team will be in touch.`,
-      html:
-        `<p>Thanks for registering as media for <strong>Wellness India Expo 2027</strong>, ${escapeHtml(data.fullName)}. Here's what you submitted:</p>` +
-        `<table cellpadding="4" cellspacing="0">` +
-        fields.map(([label, value]) => `<tr><td><strong>${escapeHtml(label)}</strong></td><td>${escapeHtml(value)}</td></tr>`).join("") +
-        `</table>` +
-        `<p>Accreditation is subject to acceptance by the communications department. Our team will be in touch.</p>`
+      text,
+      html
     });
   } catch (err) {
     console.error("Media registration submission failed:", err);
