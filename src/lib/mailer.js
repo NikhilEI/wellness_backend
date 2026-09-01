@@ -12,7 +12,10 @@ function getTransporter() {
     secure: process.env.SMTP_SECURE === "true",
     auth: process.env.SMTP_USER
       ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
-      : undefined
+      : undefined,
+    // Local Postfix relay presents a self-signed cert for opportunistic STARTTLS;
+    // this hop never leaves loopback so there's no MITM risk in trusting it.
+    tls: { rejectUnauthorized: false }
   });
   return transporter;
 }
