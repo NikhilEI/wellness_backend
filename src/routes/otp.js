@@ -26,14 +26,20 @@ function resolveIdentifier(req) {
   return null;
 }
 
-router.post("/send", (req, res) => {
+router.post("/send", async (req, res) => {
   const resolved = resolveIdentifier(req);
   if (!resolved) {
     return res.status(400).json({ message: "Please provide a valid mobile number or email address." });
   }
 
-  const result = otpStore.send(resolved.channel, resolved.identifier, req.ip);
+  const result = await otpStore.send(resolved.channel, resolved.identifier, req.ip);
   if (!result.ok) {
+    if (result.reason === "send_failed") {
+      return res.status(502).json({ message: "Could not send OTP right now. Please try again." });
+    }
+    if (result.reason === "cooldown") {
+      return res.status(429).json({ message: `Please wait ${result.waitSeconds} seconds before requesting another OTP.` });
+    }
     return res.status(429).json({ message: "Too many OTP requests. Please try again later." });
   }
 

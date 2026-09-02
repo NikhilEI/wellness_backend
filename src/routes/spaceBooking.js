@@ -1,6 +1,11 @@
 const express = require("express");
 const pool = require("../db/pool");
+const otpStore = require("../lib/otpStore");
 const { sendMail, buildConfirmationEmail, getBccList } = require("../lib/mailer");
+
+// This form only ever collects a 10-digit Indian mobile number (no country selector),
+// so the OTP identifier is always prefixed with India's dial code.
+const OTP_COUNTRY_CODE = "+91";
 
 const router = express.Router();
 
@@ -83,6 +88,12 @@ router.post("/", async (req, res) => {
   } catch (err) {
     console.error("reCAPTCHA verification request failed:", err);
     return res.status(502).json({ message: "Could not verify captcha right now. Please try again." });
+  }
+
+  // Never trust the client's otpVerified flag — re-check the server-side OTP state that
+  // was actually set by a successful /api/otp/verify call for this mobile number.
+  if (!otpStore.isVerified("mobile", `${OTP_COUNTRY_CODE}${data.mobileNo}`)) {
+    return res.status(400).json({ message: "Please verify your mobile number via OTP before submitting." });
   }
 
   try {

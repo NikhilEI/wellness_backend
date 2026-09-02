@@ -1,6 +1,6 @@
 const express = require("express");
 const pool = require("../db/pool");
-const { sendMail, escapeHtml } = require("../lib/mailer");
+const { sendMail, escapeHtml, getBccList } = require("../lib/mailer");
 
 const router = express.Router();
 
@@ -32,6 +32,7 @@ router.post("/", async (req, res) => {
 
     sendMail({
       to: email,
+      bcc: getBccList("BCC_NEWSLETTER"),
       subject: "Thanks for subscribing — Wellness India Expo 2027",
       text: `Thanks for subscribing to the Wellness India Expo 2027 newsletter with ${email}. We'll keep you posted on the latest updates.`,
       html: `<p>Thanks for subscribing to the <strong>Wellness India Expo 2027</strong> newsletter with <strong>${escapeHtml(email)}</strong>.</p><p>We'll keep you posted on the latest updates.</p>`

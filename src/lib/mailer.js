@@ -24,24 +24,31 @@ function getTransporter() {
 // should never block/error the form submission it's attached to — every failure mode here
 // (unconfigured SMTP, a bad transporter config, a send failure) is caught and logged, never
 // thrown, so callers can call this fire-and-forget without a try/catch of their own.
+//
+// `bcc` recipients are sent as a separate direct email (their address in the `To` header)
+// rather than via SMTP-level Bcc: eigroup.in's mail security silently quarantines messages
+// where a recipient appears only in the envelope RCPT list and not in a visible To/Cc header,
+// so true Bcc copies were never arriving even though the primary `to` copy always did.
 async function sendMail({ to, bcc, subject, text, html }) {
-  try {
-    const client = getTransporter();
-    if (!client) {
-      console.log(`SMTP not configured — skipping email "${subject}" to ${to}`);
-      return;
-    }
+  const from = process.env.SMTP_FROM || process.env.SMTP_USER || '"Wellness India Expo" <noreply@wellnessindiaexpo.com>';
+  const client = getTransporter();
+  if (!client) {
+    console.log(`SMTP not configured — skipping email "${subject}" to ${to}`);
+    return;
+  }
 
-    await client.sendMail({
-      from: process.env.SMTP_FROM || process.env.SMTP_USER || '"Wellness India Expo" <noreply@wellnessindiaexpo.com>',
-      to,
-      bcc: bcc && bcc.length > 0 ? bcc : undefined,
-      subject,
-      text,
-      html
-    });
+  try {
+    await client.sendMail({ from, to, subject, text, html });
   } catch (err) {
     console.error(`Failed to send email "${subject}" to ${to}:`, err);
+  }
+
+  if (bcc && bcc.length > 0) {
+    try {
+      await client.sendMail({ from, to: bcc, subject, text, html });
+    } catch (err) {
+      console.error(`Failed to send internal-notification copy of "${subject}" to ${bcc}:`, err);
+    }
   }
 }
 

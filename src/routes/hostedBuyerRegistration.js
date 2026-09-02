@@ -1,6 +1,11 @@
 const express = require("express");
 const pool = require("../db/pool");
-const { sendMail, buildConfirmationEmail } = require("../lib/mailer");
+const otpStore = require("../lib/otpStore");
+const { sendMail, buildConfirmationEmail, getBccList } = require("../lib/mailer");
+
+// This form only ever collects a 10-digit Indian mobile number (no country selector),
+// so the OTP identifier is always prefixed with India's dial code.
+const OTP_COUNTRY_CODE = "+91";
 
 const router = express.Router();
 
@@ -95,6 +100,12 @@ router.post("/", async (req, res) => {
     return res.status(502).json({ message: "Could not verify captcha right now. Please try again." });
   }
 
+  // Never trust the client's otpVerified flag — re-check the server-side OTP state that
+  // was actually set by a successful /api/otp/verify call for this mobile number.
+  if (!otpStore.isVerified("mobile", `${OTP_COUNTRY_CODE}${data.mobile}`)) {
+    return res.status(400).json({ message: "Please verify your mobile number via OTP before submitting." });
+  }
+
   try {
     await pool.query(
       `INSERT INTO hosted_buyer_registrations
@@ -138,6 +149,7 @@ router.post("/", async (req, res) => {
 
     sendMail({
       to: data.email,
+      bcc: getBccList("BCC_HOSTED_BUYER"),
       subject: "Thanks for your Hosted Buyer enquiry — Wellness India Expo 2027",
       text,
       html
