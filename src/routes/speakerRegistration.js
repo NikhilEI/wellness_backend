@@ -18,26 +18,6 @@ const TITLE_OPTIONS = ["Mr.", "Mrs.", "Miss", "Ms.", "Dr.", "Prof.", "Other"];
 
 const REQUIRED_FIELDS = ["title", "firstName", "organisation", "designation", "email", "mobile", "city", "country"];
 
-async function verifyRecaptcha(token, remoteIp) {
-  const secret = process.env.RECAPTCHA_SECRET_KEY;
-  if (!secret) {
-    // Not configured yet — don't block submissions while the site key/secret are being set up.
-    return true;
-  }
-  if (!token) return false;
-
-  const params = new URLSearchParams({ secret, response: token });
-  if (remoteIp) params.set("remoteip", remoteIp);
-
-  const res = await fetch("https://www.google.com/recaptcha/api/siteverify", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: params.toString()
-  });
-  const body = await res.json();
-  return body.success === true;
-}
-
 router.post("/", async (req, res) => {
   const data = {};
   for (const key of REQUIRED_FIELDS) {
@@ -48,7 +28,6 @@ router.post("/", async (req, res) => {
   data.zipCode = String(req.body.zipCode || "").trim();
   data.state = String(req.body.state || "").trim();
   data.termsAccepted = Boolean(req.body.termsAccepted);
-  data.recaptchaToken = String(req.body.recaptchaToken || "").trim();
 
   const missing = REQUIRED_FIELDS.filter((key) => !data[key]);
   if (missing.length > 0) {
@@ -81,16 +60,6 @@ router.post("/", async (req, res) => {
 
   if (!data.termsAccepted) {
     return res.status(400).json({ message: "Please accept the Terms and Conditions." });
-  }
-
-  try {
-    const recaptchaOk = await verifyRecaptcha(data.recaptchaToken, req.ip);
-    if (!recaptchaOk) {
-      return res.status(400).json({ message: "Captcha verification failed. Please try again." });
-    }
-  } catch (err) {
-    console.error("reCAPTCHA verification request failed:", err);
-    return res.status(502).json({ message: "Could not verify captcha right now. Please try again." });
   }
 
   // Never trust the client's otpVerified flag — re-check the server-side OTP state that

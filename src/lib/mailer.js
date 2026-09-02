@@ -20,8 +20,8 @@ function getTransporter() {
   return transporter;
 }
 
-// Mirrors the reCAPTCHA pattern in spaceBooking.js: an unconfigured or failing mail send
-// should never block/error the form submission it's attached to — every failure mode here
+// An unconfigured or failing mail send should never block/error the form submission it's
+// attached to — every failure mode here
 // (unconfigured SMTP, a bad transporter config, a send failure) is caught and logged, never
 // thrown, so callers can call this fire-and-forget without a try/catch of their own.
 //
