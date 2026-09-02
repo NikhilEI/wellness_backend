@@ -12,6 +12,8 @@ const MAX_VERIFY_ATTEMPTS = Number(process.env.OTP_MAX_VERIFY_ATTEMPTS) || 5;
 // MAX_SENDS_PER_WINDOW quota above — stops someone spamming "Resend OTP" instantly.
 const RESEND_COOLDOWN_MS = (Number(process.env.OTP_RESEND_COOLDOWN_SECONDS) || 120) * 1000;
 
+const { sendOtpEmail } = require("./mailer");
+
 const SEND2DIGITAL_API_URL = "https://api.send2.digital/devdesk/send";
 const SEND2DIGITAL_USER = process.env.SEND2DIGITAL_USER;
 const SEND2DIGITAL_PASSWORD = process.env.SEND2DIGITAL_PASSWORD;
@@ -81,7 +83,9 @@ function recordSend(channel, identifier, ip) {
   }
 }
 
-async function send(channel, identifier, ip) {
+// Rate-limit + cooldown gate shared by send() and sendBoth() — returns a failure result
+// to return as-is, or null when it's fine to proceed (and the send has been recorded).
+function checkAndRecordSend(channel, identifier, ip) {
   if (!checkRateLimit(channel, identifier, ip)) {
     return { ok: false, reason: "rate_limited" };
   }
@@ -94,6 +98,12 @@ async function send(channel, identifier, ip) {
   }
 
   recordSend(channel, identifier, ip);
+  return null;
+}
+
+async function send(channel, identifier, ip) {
+  const blocked = checkAndRecordSend(channel, identifier, ip);
+  if (blocked) return blocked;
 
   const k = key(channel, identifier);
   const gatewayConfigured = channel === "mobile" && SEND2DIGITAL_USER && SEND2DIGITAL_PASSWORD;
@@ -145,4 +155,54 @@ function isVerified(channel, identifier) {
   return Boolean(entry && entry.verified && Date.now() <= entry.expiresAt);
 }
 
-module.exports = { send, verify, isVerified };
+// Sends ONE code through both channels at once (SMS + email) so the user can use whichever
+// arrives first — used by forms that require both a mobile number and an email address.
+// Rate limiting / cooldown is gated on the mobile+email pair together, separately from the
+// single-channel send() above (so it never interferes with Visitor Registration's
+// independent mobile-only / email-only flow).
+async function sendBoth(mobileIdentifier, emailIdentifier, ip) {
+  const comboKey = `${mobileIdentifier}|${emailIdentifier}`;
+  const blocked = checkAndRecordSend("both", comboKey, ip);
+  if (blocked) return blocked;
+
+  const gatewayConfigured = SEND2DIGITAL_USER && SEND2DIGITAL_PASSWORD;
+  const code = gatewayConfigured ? generateOtp() : MOCK_CODE;
+
+  if (gatewayConfigured) {
+    try {
+      // mobileIdentifier is "<countryCode><mobile>" (e.g. "+917982567755") — strip the "+"
+      // send2.digital expects digits only.
+      await sendSms(mobileIdentifier.replace(/\D/g, ""), code);
+    } catch (err) {
+      console.error(`send2.digital OTP send failed for ${mobileIdentifier}:`, err.message);
+      return { ok: false, reason: "send_failed" };
+    }
+  } else {
+    console.log(`OTP for mobile:${mobileIdentifier} / email:${emailIdentifier}: ${code} (mock — no SMS gateway configured)`);
+  }
+
+  const expiresAt = Date.now() + TTL_MS;
+  otps.set(key("mobile", mobileIdentifier), { code, expiresAt, verified: false, attempts: 0 });
+  otps.set(key("email", emailIdentifier), { code, expiresAt, verified: false, attempts: 0 });
+
+  // Best-effort, same as every other email in this codebase — the SMS side above is the
+  // one that can actually fail this request; a slow/broken mailer never blocks OTP delivery.
+  sendOtpEmail(emailIdentifier, code, Math.floor(TTL_MS / 1000)).catch(() => {});
+
+  return { ok: true, expiresInSeconds: Math.floor(TTL_MS / 1000) };
+}
+
+// The mobile and email entries created by sendBoth() carry the same code, so verifying
+// against the mobile entry is sufficient — every form's backend check is
+// otpStore.isVerified("mobile", ...). The email entry is marked verified too in case
+// anything ever checks that side instead.
+function verifyBoth(mobileIdentifier, emailIdentifier, code) {
+  const result = verify("mobile", mobileIdentifier, code);
+  if (result.ok) {
+    const emailEntry = otps.get(key("email", emailIdentifier));
+    if (emailEntry) emailEntry.verified = true;
+  }
+  return result;
+}
+
+module.exports = { send, verify, isVerified, sendBoth, verifyBoth };

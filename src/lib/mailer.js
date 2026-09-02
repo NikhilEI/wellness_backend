@@ -52,6 +52,32 @@ async function sendMail({ to, bcc, subject, text, html }) {
   }
 }
 
+// Sends an OTP code by email (used alongside the SMS gateway when a form sends the same
+// code via both channels — otpStore.js's sendBoth()). Best-effort like every other mail
+// in this file: an unconfigured SMTP or a send failure never throws, since the mobile/SMS
+// side of the OTP delivery already went out (or was attempted) independently.
+async function sendOtpEmail(to, code, expiresInSeconds) {
+  const from = process.env.SMTP_FROM || process.env.SMTP_USER || '"Wellness India Expo" <noreply@wellnessindiaexpo.com>';
+  const client = getTransporter();
+  if (!client) {
+    console.log(`SMTP not configured — skipping OTP email to ${to}`);
+    return;
+  }
+
+  const minutes = Math.round((expiresInSeconds || 600) / 60);
+  try {
+    await client.sendMail({
+      from,
+      to,
+      subject: "Your Wellness India Expo 2027 verification code",
+      text: `Your OTP is ${code}. It is valid for ${minutes} minutes.`,
+      html: `<p>Your OTP is <strong style="font-size:18px;letter-spacing:2px;">${code}</strong>.</p><p>It is valid for ${minutes} minutes.</p>`
+    });
+  } catch (err) {
+    console.error(`Failed to send OTP email to ${to}:`, err);
+  }
+}
+
 // Reads a comma-separated internal-notification list from an env var (e.g.
 // BCC_SPACE_BOOKING=princes@eigroup.in,pankaj@eigroup.in) so who gets BCC'd on each form
 // can be changed per-environment without a code change or redeploy. Returns [] (meaning "no
@@ -93,4 +119,4 @@ function buildConfirmationEmail({ firstName, eventName, actionPhrase, fields }) 
   return { text, html };
 }
 
-module.exports = { sendMail, escapeHtml, buildConfirmationEmail, getBccList };
+module.exports = { sendMail, sendOtpEmail, escapeHtml, buildConfirmationEmail, getBccList };
