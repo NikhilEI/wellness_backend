@@ -123,3 +123,38 @@ CREATE TABLE IF NOT EXISTS brochure_downloads (
   mobile VARCHAR(20) NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
+
+-- ---- CMS admin panel (/cms-admin): separate from Exhibitor Zone users/sessions ----
+CREATE TABLE IF NOT EXISTS cms_admins (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  email VARCHAR(255) NOT NULL,
+  name VARCHAR(100) NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_cms_admin_email (email)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS cms_admin_sessions (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  token_hash CHAR(64) NOT NULL,
+  admin_id INT UNSIGNED NOT NULL,
+  expires_at DATETIME NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_cms_session_token (token_hash),
+  KEY idx_cms_session_admin (admin_id),
+  CONSTRAINT fk_cms_session_admin FOREIGN KEY (admin_id) REFERENCES cms_admins (id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- SEO overrides per public page path. A page with no row falls back to the defaults
+-- hardcoded in the frontend (src/lib/seoDefaults.ts).
+CREATE TABLE IF NOT EXISTS seo_pages (
+  path VARCHAR(150) NOT NULL PRIMARY KEY,
+  title VARCHAR(200) NULL,
+  description VARCHAR(500) NULL,
+  keywords VARCHAR(500) NULL,
+  canonical_url VARCHAR(500) NULL,
+  og_image VARCHAR(500) NULL,
+  updated_by VARCHAR(255) NULL,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;

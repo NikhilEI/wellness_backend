@@ -6,6 +6,9 @@ const cookieParser = require("cookie-parser");
 const pool = require("./db/pool");
 const newsletterRouter = require("./routes/newsletter");
 const spaceBookingRouter = require("./routes/spaceBooking");
+const seoRouter = require("./routes/seo");
+const cmsAdminRouter = require("./routes/cmsAdmin");
+const crmApiRouter = require("./routes/crmApi");
 const otpRouter = require("./routes/otp");
 const visitorRegistrationRouter = require("./routes/visitorRegistration");
 const speakerRegistrationRouter = require("./routes/speakerRegistration");
@@ -37,6 +40,9 @@ app.get("/api/health", (req, res) => {
 
 app.use("/api/newsletter", newsletterRouter);
 app.use("/api/space-booking", spaceBookingRouter);
+app.use("/api/seo", seoRouter);
+app.use("/api/cms-admin", cmsAdminRouter);
+app.use("/api/crm", crmApiRouter);
 app.use("/api/otp", otpRouter);
 app.use("/api/visitor-registration", visitorRegistrationRouter);
 app.use("/api/speaker-registration", speakerRegistrationRouter);

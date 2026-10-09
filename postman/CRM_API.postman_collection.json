@@ -1,0 +1,883 @@
+{
+  "info": {
+    "name": "Wellness Expo - CRM Lead Feed API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Set the apiKey collection variable to the CRM_API_KEYS value from backend/.env, then run requests."
+  },
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      {
+        "key": "key",
+        "value": "X-API-Key",
+        "type": "string"
+      },
+      {
+        "key": "value",
+        "value": "{{apiKey}}",
+        "type": "string"
+      },
+      {
+        "key": "in",
+        "value": "header",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4010"
+    },
+    {
+      "key": "apiKey",
+      "value": ""
+    },
+    {
+      "key": "lastId",
+      "value": "0"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Discovery",
+      "item": [
+        {
+          "name": "List all forms",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "",
+            "url": {
+              "raw": "{{baseUrl}}/api/crm/forms",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "crm",
+                "forms"
+              ],
+              "query": []
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "if ((pm.response.headers.get(\"Content-Type\")||\"\").includes(\"json\")) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.data) { pm.test(\"has data array\", () => pm.expect(j.data).to.be.an(\"array\")); if (j.lastId) pm.collectionVariables.set(\"lastId\", j.lastId); }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Leads by form",
+      "item": [
+        {
+          "name": "space-booking",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "",
+            "url": {
+              "raw": "{{baseUrl}}/api/crm/leads/space-booking?limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "crm",
+                "leads",
+                "space-booking"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "if ((pm.response.headers.get(\"Content-Type\")||\"\").includes(\"json\")) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.data) { pm.test(\"has data array\", () => pm.expect(j.data).to.be.an(\"array\")); if (j.lastId) pm.collectionVariables.set(\"lastId\", j.lastId); }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "visitors",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "",
+            "url": {
+              "raw": "{{baseUrl}}/api/crm/leads/visitors?limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "crm",
+                "leads",
+                "visitors"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "if ((pm.response.headers.get(\"Content-Type\")||\"\").includes(\"json\")) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.data) { pm.test(\"has data array\", () => pm.expect(j.data).to.be.an(\"array\")); if (j.lastId) pm.collectionVariables.set(\"lastId\", j.lastId); }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "speakers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "",
+            "url": {
+              "raw": "{{baseUrl}}/api/crm/leads/speakers?limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "crm",
+                "leads",
+                "speakers"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "if ((pm.response.headers.get(\"Content-Type\")||\"\").includes(\"json\")) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.data) { pm.test(\"has data array\", () => pm.expect(j.data).to.be.an(\"array\")); if (j.lastId) pm.collectionVariables.set(\"lastId\", j.lastId); }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "media",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "",
+            "url": {
+              "raw": "{{baseUrl}}/api/crm/leads/media?limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "crm",
+                "leads",
+                "media"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "if ((pm.response.headers.get(\"Content-Type\")||\"\").includes(\"json\")) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.data) { pm.test(\"has data array\", () => pm.expect(j.data).to.be.an(\"array\")); if (j.lastId) pm.collectionVariables.set(\"lastId\", j.lastId); }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "hosted-buyers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "",
+            "url": {
+              "raw": "{{baseUrl}}/api/crm/leads/hosted-buyers?limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "crm",
+                "leads",
+                "hosted-buyers"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "if ((pm.response.headers.get(\"Content-Type\")||\"\").includes(\"json\")) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.data) { pm.test(\"has data array\", () => pm.expect(j.data).to.be.an(\"array\")); if (j.lastId) pm.collectionVariables.set(\"lastId\", j.lastId); }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "brochure",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "",
+            "url": {
+              "raw": "{{baseUrl}}/api/crm/leads/brochure?limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "crm",
+                "leads",
+                "brochure"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "if ((pm.response.headers.get(\"Content-Type\")||\"\").includes(\"json\")) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.data) { pm.test(\"has data array\", () => pm.expect(j.data).to.be.an(\"array\")); if (j.lastId) pm.collectionVariables.set(\"lastId\", j.lastId); }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "newsletter",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "",
+            "url": {
+              "raw": "{{baseUrl}}/api/crm/leads/newsletter?limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "crm",
+                "leads",
+                "newsletter"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "if ((pm.response.headers.get(\"Content-Type\")||\"\").includes(\"json\")) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.data) { pm.test(\"has data array\", () => pm.expect(j.data).to.be.an(\"array\")); if (j.lastId) pm.collectionVariables.set(\"lastId\", j.lastId); }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Date range",
+      "item": [
+        {
+          "name": "Visitors - one day (whole day included)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "",
+            "url": {
+              "raw": "{{baseUrl}}/api/crm/leads/visitors?from=2026-10-09&to=2026-10-09",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "crm",
+                "leads",
+                "visitors"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "2026-10-09"
+                },
+                {
+                  "key": "to",
+                  "value": "2026-10-09"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "if ((pm.response.headers.get(\"Content-Type\")||\"\").includes(\"json\")) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.data) { pm.test(\"has data array\", () => pm.expect(j.data).to.be.an(\"array\")); if (j.lastId) pm.collectionVariables.set(\"lastId\", j.lastId); }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Space booking - date range",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "",
+            "url": {
+              "raw": "{{baseUrl}}/api/crm/leads/space-booking?from=2026-08-01&to=2026-10-09&order=desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "crm",
+                "leads",
+                "space-booking"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "2026-08-01"
+                },
+                {
+                  "key": "to",
+                  "value": "2026-10-09"
+                },
+                {
+                  "key": "order",
+                  "value": "desc"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "if ((pm.response.headers.get(\"Content-Type\")||\"\").includes(\"json\")) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.data) { pm.test(\"has data array\", () => pm.expect(j.data).to.be.an(\"array\")); if (j.lastId) pm.collectionVariables.set(\"lastId\", j.lastId); }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Brochure - exact datetime (ISO)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "",
+            "url": {
+              "raw": "{{baseUrl}}/api/crm/leads/brochure?from=2026-08-24T00:00:00+05:30&to=2026-08-25T00:00:00+05:30",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "crm",
+                "leads",
+                "brochure"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "2026-08-24T00:00:00+05:30"
+                },
+                {
+                  "key": "to",
+                  "value": "2026-08-25T00:00:00+05:30"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "if ((pm.response.headers.get(\"Content-Type\")||\"\").includes(\"json\")) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.data) { pm.test(\"has data array\", () => pm.expect(j.data).to.be.an(\"array\")); if (j.lastId) pm.collectionVariables.set(\"lastId\", j.lastId); }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Incremental sync",
+      "item": [
+        {
+          "name": "Newest since lastId (run twice: 2nd returns 0 new)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Each run saves lastId from the response into the collection variable, mimicking a CRM sync job.",
+            "url": {
+              "raw": "{{baseUrl}}/api/crm/leads/space-booking?since_id={{lastId}}&limit=500",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "crm",
+                "leads",
+                "space-booking"
+              ],
+              "query": [
+                {
+                  "key": "since_id",
+                  "value": "{{lastId}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "500"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "if ((pm.response.headers.get(\"Content-Type\")||\"\").includes(\"json\")) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.data) { pm.test(\"has data array\", () => pm.expect(j.data).to.be.an(\"array\")); if (j.lastId) pm.collectionVariables.set(\"lastId\", j.lastId); }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reset: since_id=0 (everything)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "",
+            "url": {
+              "raw": "{{baseUrl}}/api/crm/leads/space-booking?since_id=0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "crm",
+                "leads",
+                "space-booking"
+              ],
+              "query": [
+                {
+                  "key": "since_id",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "if ((pm.response.headers.get(\"Content-Type\")||\"\").includes(\"json\")) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.data) { pm.test(\"has data array\", () => pm.expect(j.data).to.be.an(\"array\")); if (j.lastId) pm.collectionVariables.set(\"lastId\", j.lastId); }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5. Filters, paging, CSV",
+      "item": [
+        {
+          "name": "Search (q=nikhil)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "",
+            "url": {
+              "raw": "{{baseUrl}}/api/crm/leads/space-booking?q=nikhil",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "crm",
+                "leads",
+                "space-booking"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "nikhil"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "if ((pm.response.headers.get(\"Content-Type\")||\"\").includes(\"json\")) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.data) { pm.test(\"has data array\", () => pm.expect(j.data).to.be.an(\"array\")); if (j.lastId) pm.collectionVariables.set(\"lastId\", j.lastId); }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Marketing-form space bookings only",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "",
+            "url": {
+              "raw": "{{baseUrl}}/api/crm/leads/space-booking?source=marketing",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "crm",
+                "leads",
+                "space-booking"
+              ],
+              "query": [
+                {
+                  "key": "source",
+                  "value": "marketing"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "if ((pm.response.headers.get(\"Content-Type\")||\"\").includes(\"json\")) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.data) { pm.test(\"has data array\", () => pm.expect(j.data).to.be.an(\"array\")); if (j.lastId) pm.collectionVariables.set(\"lastId\", j.lastId); }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Paging: page 2, limit 2",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "",
+            "url": {
+              "raw": "{{baseUrl}}/api/crm/leads/space-booking?limit=2&page=2",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "crm",
+                "leads",
+                "space-booking"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "2"
+                },
+                {
+                  "key": "page",
+                  "value": "2"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "if ((pm.response.headers.get(\"Content-Type\")||\"\").includes(\"json\")) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.data) { pm.test(\"has data array\", () => pm.expect(j.data).to.be.an(\"array\")); if (j.lastId) pm.collectionVariables.set(\"lastId\", j.lastId); }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CSV export",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "",
+            "url": {
+              "raw": "{{baseUrl}}/api/crm/leads/brochure?format=csv",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "crm",
+                "leads",
+                "brochure"
+              ],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "csv"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "if ((pm.response.headers.get(\"Content-Type\")||\"\").includes(\"json\")) {",
+                  "  const j = pm.response.json();",
+                  "  if (j.data) { pm.test(\"has data array\", () => pm.expect(j.data).to.be.an(\"array\")); if (j.lastId) pm.collectionVariables.set(\"lastId\", j.lastId); }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "6. Expected errors (should fail)",
+      "item": [
+        {
+          "name": "No API key -> 401",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "noauth"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/crm/forms",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "crm",
+                "forms"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"401 without key\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bad date -> 400",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/crm/leads/newsletter?from=2026-02-31",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "crm",
+                "leads",
+                "newsletter"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "2026-02-31"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"400 bad date\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unknown form -> 404",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/crm/leads/foo",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "crm",
+                "leads",
+                "foo"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"404 unknown form\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
