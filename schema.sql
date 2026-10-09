@@ -25,12 +25,15 @@ CREATE TABLE IF NOT EXISTS space_bookings (
   shell_space VARCHAR(255) NULL,
   -- Reserved for future use — not currently collected by the form or written by the API.
   business_intrest VARCHAR(100) NULL,
+  -- 'public' = /space-booking (OTP verified), 'marketing' = /space-booking-marketing (no OTP).
+  source VARCHAR(20) NOT NULL DEFAULT 'public',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
--- CREATE TABLE ... IF NOT EXISTS won't add this column to a table that already exists
--- (e.g. the UAT database). Run this once there instead:
+-- CREATE TABLE ... IF NOT EXISTS won't add these columns to a table that already exists
+-- (e.g. the UAT database). Run these once there instead:
 -- ALTER TABLE space_bookings MODIFY business_intrest VARCHAR(100) NULL;
+-- ALTER TABLE space_bookings ADD COLUMN source VARCHAR(20) NOT NULL DEFAULT 'public' AFTER business_intrest;
 
 CREATE TABLE IF NOT EXISTS visitor_registrations (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

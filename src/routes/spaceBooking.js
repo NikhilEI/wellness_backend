@@ -26,7 +26,9 @@ const REQUIRED_FIELDS = [
   "mobileNo"
 ];
 
-router.post("/", async (req, res) => {
+// requireOtp=false is used by the internal marketing-team form (POST /marketing), which
+// has no OTP step.
+const createHandler = ({ requireOtp }) => async (req, res) => {
   const data = {};
   for (const key of REQUIRED_FIELDS) {
     data[key] = String(req.body[key] || "").trim();
@@ -61,15 +63,15 @@ router.post("/", async (req, res) => {
 
   // Never trust the client's otpVerified flag — re-check the server-side OTP state that
   // was actually set by a successful /api/otp/verify call for this mobile number.
-  if (!otpStore.isVerified("mobile", `${OTP_COUNTRY_CODE}${data.mobileNo}`)) {
+  if (requireOtp && !otpStore.isVerified("mobile", `${OTP_COUNTRY_CODE}${data.mobileNo}`)) {
     return res.status(400).json({ message: "Please verify your mobile number via OTP before submitting." });
   }
 
   try {
     await pool.query(
       `INSERT INTO space_bookings
-        (first_name, last_name, organisation, designation, email, learn_about_expo, city, country, mobile_no, shell_space)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (first_name, last_name, organisation, designation, email, learn_about_expo, city, country, mobile_no, shell_space, source)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         data.firstName,
         data.lastName,
@@ -80,7 +82,8 @@ router.post("/", async (req, res) => {
         data.city,
         data.country,
         data.mobileNo,
-        data.shellSpace || null
+        data.shellSpace || null,
+        requireOtp ? "public" : "marketing"
       ]
     );
     res.status(201).json({ message: "Booking enquiry submitted successfully." });
@@ -114,6 +117,9 @@ router.post("/", async (req, res) => {
     console.error("Space booking submission failed:", err);
     res.status(500).json({ message: "Could not submit your enquiry. Please try again later." });
   }
-});
+};
+
+router.post("/", createHandler({ requireOtp: true }));
+router.post("/marketing", createHandler({ requireOtp: false }));
 
 module.exports = router;
