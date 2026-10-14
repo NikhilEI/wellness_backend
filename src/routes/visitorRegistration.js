@@ -2,6 +2,7 @@ const crypto = require("crypto");
 const express = require("express");
 const pool = require("../db/pool");
 const otpStore = require("../lib/otpStore");
+const { INDUSTRY_OPTIONS, KEY_TRACK_OPTIONS } = require("../lib/formOptions");
 const { sendMail, buildConfirmationEmail, getBccList } = require("../lib/mailer");
 
 const router = express.Router();
@@ -72,6 +73,8 @@ router.post("/", async (req, res) => {
     city: String(body.city || "").trim(),
     mobile: String(body.mobile || "").trim(),
     email: String(body.email || "").trim().toLowerCase(),
+    industry: String(body.industry || "").trim(),
+    keyTrack: String(body.keyTrack || "").trim(),
     visitObjective: String(body.visitObjective || "").trim(),
     productInterests: Array.isArray(body.productInterests) ? body.productInterests.map((v) => String(v)) : [],
     termsAccepted: body.termsAccepted === true,
@@ -108,6 +111,12 @@ router.post("/", async (req, res) => {
   if (!EMAIL_RE.test(data.email)) {
     return res.status(400).json({ message: "Please enter a valid email address." });
   }
+  if (!INDUSTRY_OPTIONS.includes(data.industry)) {
+    return res.status(400).json({ message: "Please select your industry." });
+  }
+  if (!KEY_TRACK_OPTIONS.includes(data.keyTrack)) {
+    return res.status(400).json({ message: "Please select a key track." });
+  }
   if (!VISIT_OBJECTIVES.includes(data.visitObjective)) {
     return res.status(400).json({ message: "Please select the objective of your visit." });
   }
@@ -142,8 +151,8 @@ router.post("/", async (req, res) => {
       `INSERT INTO visitor_registrations
         (registration_id, title, first_name, last_name, organisation, designation, department,
          country, country_code, state, city, mobile, email, otp_verified_via, visit_objective,
-         product_interests, terms_accepted, marketing_consent)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         product_interests, industry, key_track, terms_accepted, marketing_consent)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         registrationId,
         data.title,
@@ -161,6 +170,8 @@ router.post("/", async (req, res) => {
         mobileVerified ? "mobile" : "email",
         data.visitObjective,
         JSON.stringify(data.productInterests),
+        data.industry,
+        data.keyTrack,
         data.termsAccepted,
         data.marketingConsent
       ]
@@ -186,6 +197,8 @@ router.post("/", async (req, res) => {
         ["State", data.state],
         ["Country", data.country],
         ["Objective of Visit", data.visitObjective],
+        ["Industry", data.industry],
+        ["Key Track", data.keyTrack],
         ["Product Interests", data.productInterests.join(", ")]
       ]
     });

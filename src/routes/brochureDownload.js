@@ -1,12 +1,14 @@
 const express = require("express");
 const pool = require("../db/pool");
 const otpStore = require("../lib/otpStore");
+const { INDUSTRY_OPTIONS } = require("../lib/formOptions");
 const { sendMail, escapeHtml } = require("../lib/mailer");
 
 const router = express.Router();
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MOBILE_RE = /^[0-9]{6,15}$/;
+const ALREADY_REGISTERED_MESSAGE = "A brochure request already exists for this email/mobile number.";
 const BROCHURE_URL = process.env.BROCHURE_URL || "https://wellnessindiaexpo.com/pdf/Wellness-India-2027-Expo-Brochure.pdf";
 
 router.post("/", async (req, res) => {
@@ -33,6 +35,9 @@ router.post("/", async (req, res) => {
   if (data.companyName.length < 2 || data.companyName.length > 150) {
     return res.status(400).json({ message: "Please enter your company name." });
   }
+  if (!INDUSTRY_OPTIONS.includes(data.industry)) {
+    return res.status(400).json({ message: "Please select your industry." });
+  }
   if (!data.country) {
     return res.status(400).json({ message: "Please select a country." });
   }
@@ -51,6 +56,14 @@ router.post("/", async (req, res) => {
   }
 
   try {
+    const [existing] = await pool.query("SELECT id FROM brochure_downloads WHERE email = ? OR mobile = ? LIMIT 1", [
+      data.email,
+      normalizedMobile
+    ]);
+    if (existing.length > 0) {
+      return res.status(409).json({ message: ALREADY_REGISTERED_MESSAGE });
+    }
+
     await pool.query(
       `INSERT INTO brochure_downloads
         (full_name, designation, company_name, industry, interest, email, country, country_code, mobile)
@@ -81,6 +94,9 @@ router.post("/", async (req, res) => {
         `<p><a href="${BROCHURE_URL}">Click here to download the brochure</a>.</p>`
     });
   } catch (err) {
+    if (err.code === "ER_DUP_ENTRY") {
+      return res.status(409).json({ message: ALREADY_REGISTERED_MESSAGE });
+    }
     console.error("Brochure download submission failed:", err);
     res.status(500).json({ message: "Something went wrong. Please try again." });
   }

@@ -1,6 +1,7 @@
 const express = require("express");
 const pool = require("../db/pool");
 const otpStore = require("../lib/otpStore");
+const { INDUSTRY_OPTIONS, KEY_TRACK_OPTIONS } = require("../lib/formOptions");
 const { sendMail, buildConfirmationEmail, getBccList } = require("../lib/mailer");
 
 // This form only ever collects a 10-digit Indian mobile number (no country selector),
@@ -16,7 +17,9 @@ const ORG_RE = /^.{2,150}$/;
 const CITY_RE = /^[A-Za-z\s'-]{2,100}$/;
 const TITLE_OPTIONS = ["Mr.", "Mrs.", "Miss", "Ms.", "Dr.", "Prof.", "Other"];
 
-const REQUIRED_FIELDS = ["title", "firstName", "organisation", "designation", "email", "mobile", "city", "country"];
+const ALREADY_REGISTERED_MESSAGE = "A registration already exists for this email/mobile number.";
+
+const REQUIRED_FIELDS = ["industry", "keyTrack", "title", "firstName", "organisation", "designation", "email", "mobile", "city", "country"];
 
 router.post("/", async (req, res) => {
   const data = {};
@@ -36,6 +39,14 @@ router.post("/", async (req, res) => {
 
   if (!TITLE_OPTIONS.includes(data.title)) {
     return res.status(400).json({ message: "Please select a valid title." });
+  }
+
+  if (!INDUSTRY_OPTIONS.includes(data.industry)) {
+    return res.status(400).json({ message: "Please select a valid industry." });
+  }
+
+  if (!KEY_TRACK_OPTIONS.includes(data.keyTrack)) {
+    return res.status(400).json({ message: "Please select a valid key track." });
   }
 
   if (!EMAIL_RE.test(data.email)) {
@@ -69,10 +80,18 @@ router.post("/", async (req, res) => {
   }
 
   try {
+    const [existing] = await pool.query("SELECT id FROM speaker_registrations WHERE email = ? OR mobile = ? LIMIT 1", [
+      data.email.toLowerCase(),
+      data.mobile
+    ]);
+    if (existing.length > 0) {
+      return res.status(409).json({ message: ALREADY_REGISTERED_MESSAGE });
+    }
+
     await pool.query(
       `INSERT INTO speaker_registrations
-        (title, first_name, last_name, organisation, designation, email, mobile, address, city, zip_code, state, country, terms_accepted)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (title, first_name, last_name, organisation, designation, email, mobile, address, city, zip_code, state, country, industry, key_track, terms_accepted)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         data.title,
         data.firstName,
@@ -86,6 +105,8 @@ router.post("/", async (req, res) => {
         data.zipCode || null,
         data.state || null,
         data.country,
+        data.industry,
+        data.keyTrack,
         data.termsAccepted ? 1 : 0
       ]
     );
@@ -107,7 +128,9 @@ router.post("/", async (req, res) => {
         ["City", data.city],
         ["Zip Code", data.zipCode],
         ["State", data.state],
-        ["Country", data.country]
+        ["Country", data.country],
+        ["Industry", data.industry],
+        ["Key Track", data.keyTrack]
       ]
     });
 
@@ -119,6 +142,9 @@ router.post("/", async (req, res) => {
       html
     });
   } catch (err) {
+    if (err.code === "ER_DUP_ENTRY") {
+      return res.status(409).json({ message: ALREADY_REGISTERED_MESSAGE });
+    }
     console.error("Speaker registration submission failed:", err);
     res.status(500).json({ message: "Could not submit your registration. Please try again later." });
   }

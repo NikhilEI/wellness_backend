@@ -1,6 +1,7 @@
 const express = require("express");
 const pool = require("../db/pool");
 const otpStore = require("../lib/otpStore");
+const { INDUSTRY_OPTIONS } = require("../lib/formOptions");
 const { sendMail, buildConfirmationEmail, getBccList } = require("../lib/mailer");
 
 // This form only ever collects a 10-digit Indian mobile number (no country selector),
@@ -15,6 +16,8 @@ const NAME_RE = /^[A-Za-z\s'-]{2,30}$/;
 const ORG_RE = /^.{2,30}$/;
 const CITY_RE = /^[A-Za-z\s'-]{2,50}$/;
 
+const ALREADY_REGISTERED_MESSAGE = "A booking enquiry already exists for this email/mobile number.";
+
 const REQUIRED_FIELDS = [
   "firstName",
   "lastName",
@@ -23,7 +26,8 @@ const REQUIRED_FIELDS = [
   "learnAboutExpo",
   "city",
   "country",
-  "mobileNo"
+  "mobileNo",
+  "industry"
 ];
 
 // requireOtp=false is used by the internal marketing-team form (POST /marketing), which
@@ -61,6 +65,10 @@ const createHandler = ({ requireOtp }) => async (req, res) => {
     return res.status(400).json({ message: "City must be letters only, 2-50 characters." });
   }
 
+  if (!INDUSTRY_OPTIONS.includes(data.industry)) {
+    return res.status(400).json({ message: "Please select a valid industry." });
+  }
+
   // Never trust the client's otpVerified flag — re-check the server-side OTP state that
   // was actually set by a successful /api/otp/verify call for this mobile number.
   if (requireOtp && !otpStore.isVerified("mobile", `${OTP_COUNTRY_CODE}${data.mobileNo}`)) {
@@ -68,10 +76,18 @@ const createHandler = ({ requireOtp }) => async (req, res) => {
   }
 
   try {
+    const [existing] = await pool.query("SELECT id FROM space_bookings WHERE email = ? OR mobile_no = ? LIMIT 1", [
+      data.email.toLowerCase(),
+      data.mobileNo
+    ]);
+    if (existing.length > 0) {
+      return res.status(409).json({ message: ALREADY_REGISTERED_MESSAGE });
+    }
+
     await pool.query(
       `INSERT INTO space_bookings
-        (first_name, last_name, organisation, designation, email, learn_about_expo, city, country, mobile_no, shell_space, source)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (first_name, last_name, organisation, designation, email, learn_about_expo, city, country, mobile_no, shell_space, industry, source)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         data.firstName,
         data.lastName,
@@ -83,6 +99,7 @@ const createHandler = ({ requireOtp }) => async (req, res) => {
         data.country,
         data.mobileNo,
         data.shellSpace || null,
+        data.industry,
         requireOtp ? "public" : "marketing"
       ]
     );
@@ -102,6 +119,7 @@ const createHandler = ({ requireOtp }) => async (req, res) => {
         ["City", data.city],
         ["Country", data.country],
         ["Space Required", data.shellSpace],
+        ["Industry", data.industry],
         ["How did you hear about the expo?", data.learnAboutExpo]
       ]
     });
@@ -114,6 +132,9 @@ const createHandler = ({ requireOtp }) => async (req, res) => {
       html
     });
   } catch (err) {
+    if (err.code === "ER_DUP_ENTRY") {
+      return res.status(409).json({ message: ALREADY_REGISTERED_MESSAGE });
+    }
     console.error("Space booking submission failed:", err);
     res.status(500).json({ message: "Could not submit your enquiry. Please try again later." });
   }

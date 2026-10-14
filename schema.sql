@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS space_bookings (
   country VARCHAR(100) NOT NULL,
   mobile_no VARCHAR(20) NOT NULL,
   shell_space VARCHAR(255) NULL,
+  industry VARCHAR(150) NULL,
   -- Reserved for future use — not currently collected by the form or written by the API.
   business_intrest VARCHAR(100) NULL,
   -- 'public' = /space-booking (OTP verified), 'marketing' = /space-booking-marketing (no OTP).
@@ -53,6 +54,8 @@ CREATE TABLE IF NOT EXISTS visitor_registrations (
   otp_verified_via VARCHAR(10) NOT NULL,
   visit_objective VARCHAR(150) NOT NULL,
   product_interests JSON NOT NULL,
+  industry VARCHAR(150) NULL,
+  key_track VARCHAR(150) NULL,
   terms_accepted TINYINT(1) NOT NULL DEFAULT 0,
   marketing_consent TINYINT(1) NOT NULL DEFAULT 0,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -75,6 +78,8 @@ CREATE TABLE IF NOT EXISTS speaker_registrations (
   zip_code VARCHAR(20) NULL,
   state VARCHAR(100) NULL,
   country VARCHAR(100) NOT NULL,
+  industry VARCHAR(150) NULL,
+  key_track VARCHAR(150) NULL,
   terms_accepted TINYINT(1) NOT NULL DEFAULT 0,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
