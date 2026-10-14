@@ -2,6 +2,7 @@ const express = require("express");
 const pool = require("../db/pool");
 const otpStore = require("../lib/otpStore");
 const { INDUSTRY_OPTIONS } = require("../lib/formOptions");
+const { checkMaxLengths } = require("../lib/validation");
 const { sendMail, buildConfirmationEmail, getBccList } = require("../lib/mailer");
 
 // This form only ever collects a 10-digit Indian mobile number (no country selector),
@@ -13,10 +14,24 @@ const router = express.Router();
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MOBILE_RE = /^[0-9]{10}$/;
 const NAME_RE = /^[A-Za-z\s'-]{2,30}$/;
-const ORG_RE = /^.{2,30}$/;
+const ORG_RE = /^.{2,100}$/;
 const CITY_RE = /^[A-Za-z\s'-]{2,50}$/;
 
 const ALREADY_REGISTERED_MESSAGE = "A booking enquiry already exists for this email/mobile number.";
+
+const LEARN_ABOUT_OPTIONS = [
+  "Google",
+  "LinkedIn",
+  "Facebook",
+  "Twitter",
+  "Instagram",
+  "Emailer",
+  "Newspaper Ads",
+  "Magazine Ads",
+  "Referral from friend / colleague",
+  "Whatsapp / SMS",
+  "Others"
+];
 
 const REQUIRED_FIELDS = [
   "firstName",
@@ -26,6 +41,7 @@ const REQUIRED_FIELDS = [
   "learnAboutExpo",
   "city",
   "country",
+  "state",
   "mobileNo",
   "industry"
 ];
@@ -45,6 +61,20 @@ const createHandler = ({ requireOtp }) => async (req, res) => {
     return res.status(400).json({ message: "Please fill in all required fields." });
   }
 
+  const lengthError = checkMaxLengths(data, {
+    designation: ["Designation", 100],
+    shellSpace: ["Space required", 255],
+    email: ["Email", 254],
+    state: ["State", 100],
+    country: ["Country", 100]
+  });
+  if (lengthError) {
+    return res.status(400).json({ message: lengthError });
+  }
+  if (!LEARN_ABOUT_OPTIONS.includes(data.learnAboutExpo)) {
+    return res.status(400).json({ message: "Please select how you heard about the expo." });
+  }
+
   if (!EMAIL_RE.test(data.email)) {
     return res.status(400).json({ message: "Please enter a valid email address." });
   }
@@ -58,7 +88,7 @@ const createHandler = ({ requireOtp }) => async (req, res) => {
   }
 
   if (!ORG_RE.test(data.organisation)) {
-    return res.status(400).json({ message: "Organisation name must be between 2 and 30 characters." });
+    return res.status(400).json({ message: "Organisation name must be between 2 and 100 characters." });
   }
 
   if (!CITY_RE.test(data.city)) {
@@ -86,8 +116,8 @@ const createHandler = ({ requireOtp }) => async (req, res) => {
 
     await pool.query(
       `INSERT INTO space_bookings
-        (first_name, last_name, organisation, designation, email, learn_about_expo, city, country, mobile_no, shell_space, industry, source)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (first_name, last_name, organisation, designation, email, learn_about_expo, city, country, state, mobile_no, shell_space, industry, source)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         data.firstName,
         data.lastName,
@@ -97,6 +127,7 @@ const createHandler = ({ requireOtp }) => async (req, res) => {
         data.learnAboutExpo,
         data.city,
         data.country,
+        data.state,
         data.mobileNo,
         data.shellSpace || null,
         data.industry,
@@ -118,6 +149,7 @@ const createHandler = ({ requireOtp }) => async (req, res) => {
         ["Mobile No", data.mobileNo],
         ["City", data.city],
         ["Country", data.country],
+        ["State", data.state],
         ["Space Required", data.shellSpace],
         ["Industry", data.industry],
         ["How did you hear about the expo?", data.learnAboutExpo]

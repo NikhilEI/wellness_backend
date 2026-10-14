@@ -23,5 +23,7 @@ CALL add_col_if_missing('visitor_registrations', 'industry', 'VARCHAR(150) NULL'
 CALL add_col_if_missing('visitor_registrations', 'key_track', 'VARCHAR(150) NULL');
 CALL add_col_if_missing('speaker_registrations', 'industry', 'VARCHAR(150) NULL');
 CALL add_col_if_missing('speaker_registrations', 'key_track', 'VARCHAR(150) NULL');
+CALL add_col_if_missing('space_bookings', 'state', 'VARCHAR(100) NULL');
+CALL add_col_if_missing('brochure_downloads', 'state', 'VARCHAR(100) NULL');
 
 DROP PROCEDURE add_col_if_missing;

@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS space_bookings (
   learn_about_expo VARCHAR(50) NOT NULL,
   city VARCHAR(100) NOT NULL,
   country VARCHAR(100) NOT NULL,
+  state VARCHAR(100) NULL,
   mobile_no VARCHAR(20) NOT NULL,
   shell_space VARCHAR(255) NULL,
   industry VARCHAR(150) NULL,
@@ -124,6 +125,7 @@ CREATE TABLE IF NOT EXISTS brochure_downloads (
   interest VARCHAR(150) NULL,
   email VARCHAR(255) NOT NULL,
   country VARCHAR(100) NOT NULL,
+  state VARCHAR(100) NULL,
   country_code VARCHAR(10) NOT NULL,
   mobile VARCHAR(20) NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP

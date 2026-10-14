@@ -1,6 +1,7 @@
 const express = require("express");
 const pool = require("../db/pool");
 const otpStore = require("../lib/otpStore");
+const { checkMaxLengths } = require("../lib/validation");
 const { sendMail, buildConfirmationEmail, getBccList } = require("../lib/mailer");
 
 // This form only ever collects a 10-digit Indian mobile number (no country selector),
@@ -27,6 +28,17 @@ router.post("/", async (req, res) => {
   const missing = REQUIRED_FIELDS.filter((key) => !data[key]);
   if (missing.length > 0) {
     return res.status(400).json({ message: "Please fill in all required fields." });
+  }
+
+  const lengthError = checkMaxLengths(data, {
+    mediaName: ["Name of media", 150],
+    pressCardNo: ["Press card number", 50],
+    designation: ["Designation", 100],
+    country: ["Country", 100],
+    email: ["Email", 254]
+  });
+  if (lengthError) {
+    return res.status(400).json({ message: lengthError });
   }
 
   if (!EMAIL_RE.test(data.email)) {

@@ -2,6 +2,7 @@ const express = require("express");
 const pool = require("../db/pool");
 const otpStore = require("../lib/otpStore");
 const { INDUSTRY_OPTIONS } = require("../lib/formOptions");
+const { checkMaxLengths, COUNTRY_CODE_RE } = require("../lib/validation");
 const { sendMail, escapeHtml } = require("../lib/mailer");
 
 const router = express.Router();
@@ -22,6 +23,7 @@ router.post("/", async (req, res) => {
     interest: String(body.interest || "").trim(),
     email: String(body.email || "").trim().toLowerCase(),
     country: String(body.country || "").trim(),
+    state: String(body.state || "").trim(),
     countryCode: String(body.countryCode || "").trim(),
     mobile: String(body.mobile || "").trim()
   };
@@ -41,6 +43,21 @@ router.post("/", async (req, res) => {
   if (!data.country) {
     return res.status(400).json({ message: "Please select a country." });
   }
+  if (!data.state || data.state.length > 100) {
+    return res.status(400).json({ message: "Please select or enter a state." });
+  }
+  const lengthError = checkMaxLengths(data, {
+    country: ["Country", 100],
+    state: ["State", 100],
+    email: ["Email", 254]
+  });
+  if (lengthError) {
+    return res.status(400).json({ message: lengthError });
+  }
+  if (!COUNTRY_CODE_RE.test(data.countryCode)) {
+    return res.status(400).json({ message: "Invalid country code." });
+  }
+
   if (!EMAIL_RE.test(data.email)) {
     return res.status(400).json({ message: "Please enter a valid email address." });
   }
@@ -66,8 +83,8 @@ router.post("/", async (req, res) => {
 
     await pool.query(
       `INSERT INTO brochure_downloads
-        (full_name, designation, company_name, industry, interest, email, country, country_code, mobile)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (full_name, designation, company_name, industry, interest, email, country, state, country_code, mobile)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         data.fullName,
         data.designation,
@@ -76,6 +93,7 @@ router.post("/", async (req, res) => {
         data.interest || null,
         data.email,
         data.country,
+        data.state,
         data.countryCode,
         normalizedMobile
       ]

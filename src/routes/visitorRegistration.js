@@ -2,7 +2,8 @@ const crypto = require("crypto");
 const express = require("express");
 const pool = require("../db/pool");
 const otpStore = require("../lib/otpStore");
-const { INDUSTRY_OPTIONS, KEY_TRACK_OPTIONS } = require("../lib/formOptions");
+const { KEY_TRACK_OPTIONS } = require("../lib/formOptions");
+const { checkMaxLengths, COUNTRY_CODE_RE } = require("../lib/validation");
 const { sendMail, buildConfirmationEmail, getBccList } = require("../lib/mailer");
 
 const router = express.Router();
@@ -36,18 +37,15 @@ const VISIT_OBJECTIVES = [
 ];
 
 const PRODUCT_INTERESTS = [
-  "Artificial Intelligence",
-  "Data Centre & Cloud Infra",
-  "EMS & Semiconductors",
-  "Fintech",
-  "Mobile Devices & Accessories",
-  "ICT, Broadcast & Digital Media",
-  "Internet of Things",
-  "Security & Surveillance",
-  "Smart Future Cities",
-  "Smart Living",
-  "Smart Mobility",
-  "Startups"
+  "Nutrition, Functional Foods & Beverages",
+  "Nutraceuticals & Preventive Health",
+  "Longevity, Healthspan & Healthy Ageing",
+  "Wellness Tech, Wearables & Diagnostics",
+  "Fitness, Recovery & Human Performance",
+  "Sleep, Mental Wellbeing & Mindfulness",
+  "Beauty, Aesthetics & Personal Care",
+  "Women’s Health & Femtech",
+  "Spa, Wellness Tourism, Corporate & Healthy Living"
 ];
 
 const ALREADY_REGISTERED_MESSAGE = "A registration already exists for this email/mobile number.";
@@ -73,7 +71,6 @@ router.post("/", async (req, res) => {
     city: String(body.city || "").trim(),
     mobile: String(body.mobile || "").trim(),
     email: String(body.email || "").trim().toLowerCase(),
-    industry: String(body.industry || "").trim(),
     keyTrack: String(body.keyTrack || "").trim(),
     visitObjective: String(body.visitObjective || "").trim(),
     productInterests: Array.isArray(body.productInterests) ? body.productInterests.map((v) => String(v)) : [],
@@ -108,11 +105,24 @@ router.post("/", async (req, res) => {
   if (!data.countryCode || !MOBILE_RE.test(data.mobile)) {
     return res.status(400).json({ message: "Please enter a valid mobile number." });
   }
+  const lengthError = checkMaxLengths(data, {
+    department: ["Department", 100],
+    state: ["State", 100],
+    country: ["Country", 100],
+    email: ["Email", 254]
+  });
+  if (lengthError) {
+    return res.status(400).json({ message: lengthError });
+  }
+  if (data.organisation && data.organisation.length < 2) {
+    return res.status(400).json({ message: "Organisation name must be between 2 and 150 characters." });
+  }
+  if (!COUNTRY_CODE_RE.test(data.countryCode)) {
+    return res.status(400).json({ message: "Invalid country code." });
+  }
+
   if (!EMAIL_RE.test(data.email)) {
     return res.status(400).json({ message: "Please enter a valid email address." });
-  }
-  if (!INDUSTRY_OPTIONS.includes(data.industry)) {
-    return res.status(400).json({ message: "Please select your industry." });
   }
   if (!KEY_TRACK_OPTIONS.includes(data.keyTrack)) {
     return res.status(400).json({ message: "Please select a key track." });
@@ -151,8 +161,8 @@ router.post("/", async (req, res) => {
       `INSERT INTO visitor_registrations
         (registration_id, title, first_name, last_name, organisation, designation, department,
          country, country_code, state, city, mobile, email, otp_verified_via, visit_objective,
-         product_interests, industry, key_track, terms_accepted, marketing_consent)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         product_interests, key_track, terms_accepted, marketing_consent)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         registrationId,
         data.title,
@@ -170,7 +180,6 @@ router.post("/", async (req, res) => {
         mobileVerified ? "mobile" : "email",
         data.visitObjective,
         JSON.stringify(data.productInterests),
-        data.industry,
         data.keyTrack,
         data.termsAccepted,
         data.marketingConsent
@@ -197,7 +206,6 @@ router.post("/", async (req, res) => {
         ["State", data.state],
         ["Country", data.country],
         ["Objective of Visit", data.visitObjective],
-        ["Industry", data.industry],
         ["Key Track", data.keyTrack],
         ["Product Interests", data.productInterests.join(", ")]
       ]

@@ -1,6 +1,7 @@
 const express = require("express");
 const pool = require("../db/pool");
 const otpStore = require("../lib/otpStore");
+const { checkMaxLengths } = require("../lib/validation");
 const { sendMail, buildConfirmationEmail, getBccList } = require("../lib/mailer");
 
 // This form only ever collects a 10-digit Indian mobile number (no country selector),
@@ -43,6 +44,19 @@ router.post("/", async (req, res) => {
 
   if (!NAME_RE.test(data.fullName)) {
     return res.status(400).json({ message: "Full name must be letters only, 2-100 characters." });
+  }
+
+  const lengthError = checkMaxLengths(data, {
+    designation: ["Designation", 100],
+    company: ["Company", 150],
+    country: ["Country", 100],
+    website: ["Website", 255],
+    outlets: ["No. of outlets", 100],
+    companyTurnover: ["Company turnover", 100],
+    email: ["Email", 254]
+  });
+  if (lengthError) {
+    return res.status(400).json({ message: lengthError });
   }
 
   if (!EMAIL_RE.test(data.email)) {

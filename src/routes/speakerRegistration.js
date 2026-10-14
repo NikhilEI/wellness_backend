@@ -2,6 +2,7 @@ const express = require("express");
 const pool = require("../db/pool");
 const otpStore = require("../lib/otpStore");
 const { INDUSTRY_OPTIONS, KEY_TRACK_OPTIONS } = require("../lib/formOptions");
+const { checkMaxLengths, ZIP_RE } = require("../lib/validation");
 const { sendMail, buildConfirmationEmail, getBccList } = require("../lib/mailer");
 
 // This form only ever collects a 10-digit Indian mobile number (no country selector),
@@ -19,7 +20,7 @@ const TITLE_OPTIONS = ["Mr.", "Mrs.", "Miss", "Ms.", "Dr.", "Prof.", "Other"];
 
 const ALREADY_REGISTERED_MESSAGE = "A registration already exists for this email/mobile number.";
 
-const REQUIRED_FIELDS = ["industry", "keyTrack", "title", "firstName", "organisation", "designation", "email", "mobile", "city", "country"];
+const REQUIRED_FIELDS = ["industry", "keyTrack", "title", "firstName", "organisation", "designation", "email", "mobile", "city", "state", "country"];
 
 router.post("/", async (req, res) => {
   const data = {};
@@ -29,7 +30,6 @@ router.post("/", async (req, res) => {
   data.lastName = String(req.body.lastName || "").trim();
   data.address = String(req.body.address || "").trim();
   data.zipCode = String(req.body.zipCode || "").trim();
-  data.state = String(req.body.state || "").trim();
   data.termsAccepted = Boolean(req.body.termsAccepted);
 
   const missing = REQUIRED_FIELDS.filter((key) => !data[key]);
@@ -47,6 +47,20 @@ router.post("/", async (req, res) => {
 
   if (!KEY_TRACK_OPTIONS.includes(data.keyTrack)) {
     return res.status(400).json({ message: "Please select a valid key track." });
+  }
+
+  const lengthError = checkMaxLengths(data, {
+    designation: ["Designation", 100],
+    address: ["Address", 255],
+    state: ["State", 100],
+    country: ["Country", 100],
+    email: ["Email", 254]
+  });
+  if (lengthError) {
+    return res.status(400).json({ message: lengthError });
+  }
+  if (data.zipCode && !ZIP_RE.test(data.zipCode)) {
+    return res.status(400).json({ message: "Please enter a valid zip code (letters, numbers, spaces or hyphens, up to 20 characters)." });
   }
 
   if (!EMAIL_RE.test(data.email)) {

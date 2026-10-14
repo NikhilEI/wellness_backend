@@ -1,24 +1,14 @@
 // Keep in sync with wellness_frontend_latest/src/data/industryOptions.ts
 const INDUSTRY_OPTIONS = [
-  "AI, Agentic AI & Machine Learning",
-  "Bharat Future Cities & Digital Infrastructure",
-  "Broadband, Fiber Optic & Cables",
-  "Cybersecurity",
-  "Datacenter & Cloud",
-  "Fintech & Banking",
-  "Green Technology, Energy Tech & ESG",
-  "ICT, Enterprise Technology & SaaS",
-  "IoT, Edge Computing & Digital Twins",
-  "IPTV & OTT Streaming",
-  "Robotics, Drones & Autonomous Systems",
-  "Satellite Communications & Space Tech",
-  "Security & Surveillance",
-  "Semiconductors & Electronics Manufacturing",
-  "Smart Devices & Mobile Accessories",
-  "Smart Mobility & Connected Vehicles",
-  "Startups, Innovation Hubs & Incubators",
-  "Telecom, 5G, 6G & Network Infrastructure",
-  "Others"
+  "Nutrition, Functional Foods & Beverages",
+  "Nutraceuticals & Preventive Health",
+  "Longevity, Healthspan & Healthy Ageing",
+  "Wellness Tech, Wearables & Diagnostics",
+  "Fitness, Recovery & Human Performance",
+  "Sleep, Mental Wellbeing & Mindfulness",
+  "Beauty, Aesthetics & Personal Care",
+  "Women’s Health & Femtech",
+  "Spa, Wellness Tourism, Corporate & Healthy Living"
 ];
 
 const KEY_TRACK_OPTIONS = [
