@@ -12,7 +12,6 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const NAME_RE = /^[A-Za-z][A-Za-z\s'-]{1,99}$/;
 const MOBILE_RE = /^[0-9]{6,15}$/;
 
-const TITLES = ["Mr.", "Mrs.", "Miss", "Ms.", "Dr.", "Prof.", "Other"];
 
 const DESIGNATIONS = [
   "CXO / Founder / Director",
@@ -78,9 +77,6 @@ router.post("/", async (req, res) => {
     marketingConsent: body.marketingConsent === true
   };
 
-  if (!TITLES.includes(data.title)) {
-    return res.status(400).json({ message: "Please select a title." });
-  }
   if (!NAME_RE.test(data.firstName)) {
     return res.status(400).json({ message: "Please enter a valid first name (2-100 letters, no numbers)." });
   }
@@ -194,7 +190,6 @@ router.post("/", async (req, res) => {
       actionPhrase: "a visitor",
       fields: [
         ["Registration ID", registrationId],
-        ["Title", data.title],
         ["Full Name", data.firstName],
         ["Last Name", data.lastName],
         ["Organisation", data.organisation],

@@ -4,14 +4,11 @@ const otpStore = require("../lib/otpStore");
 const { checkMaxLengths } = require("../lib/validation");
 const { sendMail, buildConfirmationEmail, getBccList } = require("../lib/mailer");
 
-// This form only ever collects a 10-digit Indian mobile number (no country selector),
-// so the OTP identifier is always prefixed with India's dial code.
-const OTP_COUNTRY_CODE = "+91";
+const { parseMobile } = require("../lib/phone");
 
 const router = express.Router();
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const MOBILE_RE = /^[0-9]{10}$/;
 const NAME_RE = /^[A-Za-z\s'-]{2,50}$/;
 const CITY_RE = /^[A-Za-z\s'-]{2,100}$/;
 
@@ -45,8 +42,9 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ message: "Please enter a valid email address." });
   }
 
-  if (!MOBILE_RE.test(data.mobile)) {
-    return res.status(400).json({ message: "Please enter a valid 10-digit mobile number." });
+  const phone = parseMobile(req.body.countryCode, data.mobile);
+  if (!phone.ok) {
+    return res.status(400).json({ message: phone.message });
   }
 
   if (!NAME_RE.test(data.fullName)) {
@@ -63,9 +61,10 @@ router.post("/", async (req, res) => {
 
   // Never trust the client's otpVerified flag — re-check the server-side OTP state that
   // was actually set by a successful /api/otp/verify call for this mobile number.
-  if (!otpStore.isVerified("mobile", `${OTP_COUNTRY_CODE}${data.mobile}`)) {
+  if (!otpStore.isVerified("mobile", `${phone.countryCode}${phone.mobile}`)) {
     return res.status(400).json({ message: "Please verify your mobile number via OTP before submitting." });
   }
+  data.mobile = phone.stored;
 
   try {
     await pool.query(

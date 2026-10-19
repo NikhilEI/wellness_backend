@@ -5,14 +5,11 @@ const { INDUSTRY_OPTIONS } = require("../lib/formOptions");
 const { checkMaxLengths } = require("../lib/validation");
 const { sendMail, buildConfirmationEmail, getBccList } = require("../lib/mailer");
 
-// This form only ever collects a 10-digit Indian mobile number (no country selector),
-// so the OTP identifier is always prefixed with India's dial code.
-const OTP_COUNTRY_CODE = "+91";
+const { parseMobile } = require("../lib/phone");
 
 const router = express.Router();
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const MOBILE_RE = /^[0-9]{10}$/;
 const NAME_RE = /^[A-Za-z\s'-]{2,30}$/;
 const ORG_RE = /^.{2,100}$/;
 const CITY_RE = /^[A-Za-z\s'-]{2,50}$/;
@@ -79,8 +76,9 @@ const createHandler = ({ requireOtp }) => async (req, res) => {
     return res.status(400).json({ message: "Please enter a valid email address." });
   }
 
-  if (!MOBILE_RE.test(data.mobileNo)) {
-    return res.status(400).json({ message: "Please enter a valid 10-digit mobile number." });
+  const phone = parseMobile(req.body.countryCode, data.mobileNo);
+  if (!phone.ok) {
+    return res.status(400).json({ message: phone.message });
   }
 
   if (!NAME_RE.test(data.firstName) || !NAME_RE.test(data.lastName)) {
@@ -101,9 +99,10 @@ const createHandler = ({ requireOtp }) => async (req, res) => {
 
   // Never trust the client's otpVerified flag — re-check the server-side OTP state that
   // was actually set by a successful /api/otp/verify call for this mobile number.
-  if (requireOtp && !otpStore.isVerified("mobile", `${OTP_COUNTRY_CODE}${data.mobileNo}`)) {
+  if (requireOtp && !otpStore.isVerified("mobile", `${phone.countryCode}${phone.mobile}`)) {
     return res.status(400).json({ message: "Please verify your mobile number via OTP before submitting." });
   }
+  data.mobileNo = phone.stored;
 
   try {
     const [existing] = await pool.query("SELECT id FROM space_bookings WHERE email = ? OR mobile_no = ? LIMIT 1", [
