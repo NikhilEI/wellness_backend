@@ -52,7 +52,6 @@ const LEAD_TYPES = {
     columns: [
       ["id", "ID"],
       ["created_at", "Submitted"],
-      ["title", "Title"],
       ["first_name", "First Name"],
       ["last_name", "Last Name"],
       ["organisation", "Organisation"],

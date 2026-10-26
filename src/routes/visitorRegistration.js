@@ -2,7 +2,7 @@ const crypto = require("crypto");
 const express = require("express");
 const pool = require("../db/pool");
 const otpStore = require("../lib/otpStore");
-const { KEY_TRACK_OPTIONS } = require("../lib/formOptions");
+const { KEY_TRACK_OPTIONS, DESIGNATION_OPTIONS: DESIGNATIONS } = require("../lib/formOptions");
 const { checkMaxLengths, COUNTRY_CODE_RE } = require("../lib/validation");
 const { sendMail, buildConfirmationEmail, getBccList } = require("../lib/mailer");
 
@@ -12,20 +12,6 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const NAME_RE = /^[A-Za-z][A-Za-z\s'-]{1,99}$/;
 const MOBILE_RE = /^[0-9]{6,15}$/;
 
-
-const DESIGNATIONS = [
-  "CXO / Founder / Director",
-  "Senior Management",
-  "Government Official",
-  "IT / Technology Professional",
-  "Urban Planning / Infrastructure Professional",
-  "Business Development / Sales",
-  "Marketing / Communications",
-  "Academic / Research",
-  "Media",
-  "Student",
-  "Other"
-];
 
 const VISIT_OBJECTIVES = [
   "Explore New Tech & Solutions",

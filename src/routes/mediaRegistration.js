@@ -1,6 +1,7 @@
 const express = require("express");
 const pool = require("../db/pool");
 const otpStore = require("../lib/otpStore");
+const { DESIGNATION_OPTIONS } = require("../lib/formOptions");
 const { checkMaxLengths } = require("../lib/validation");
 const { sendMail, buildConfirmationEmail, getBccList } = require("../lib/mailer");
 
@@ -36,6 +37,10 @@ router.post("/", async (req, res) => {
   });
   if (lengthError) {
     return res.status(400).json({ message: lengthError });
+  }
+
+  if (!DESIGNATION_OPTIONS.includes(data.designation)) {
+    return res.status(400).json({ message: "Please select a valid designation." });
   }
 
   if (!EMAIL_RE.test(data.email)) {

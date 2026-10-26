@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS visitor_registrations (
 
 CREATE TABLE IF NOT EXISTS speaker_registrations (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  title VARCHAR(10) NOT NULL,
+  title VARCHAR(10) NULL,
   first_name VARCHAR(100) NOT NULL,
   last_name VARCHAR(100) NULL,
   organisation VARCHAR(150) NOT NULL,

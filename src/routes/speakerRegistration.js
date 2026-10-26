@@ -1,7 +1,7 @@
 const express = require("express");
 const pool = require("../db/pool");
 const otpStore = require("../lib/otpStore");
-const { INDUSTRY_OPTIONS, KEY_TRACK_OPTIONS } = require("../lib/formOptions");
+const { INDUSTRY_OPTIONS, KEY_TRACK_OPTIONS, DESIGNATION_OPTIONS } = require("../lib/formOptions");
 const { checkMaxLengths, ZIP_RE } = require("../lib/validation");
 const { sendMail, buildConfirmationEmail, getBccList } = require("../lib/mailer");
 
@@ -13,11 +13,10 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const NAME_RE = /^[A-Za-z\s'-]{2,50}$/;
 const ORG_RE = /^.{2,150}$/;
 const CITY_RE = /^[A-Za-z\s'-]{2,100}$/;
-const TITLE_OPTIONS = ["Mr.", "Mrs.", "Miss", "Ms.", "Dr.", "Prof.", "Other"];
 
 const ALREADY_REGISTERED_MESSAGE = "A registration already exists for this email/mobile number.";
 
-const REQUIRED_FIELDS = ["industry", "keyTrack", "title", "firstName", "organisation", "designation", "email", "mobile", "city", "state", "country"];
+const REQUIRED_FIELDS = ["industry", "keyTrack", "firstName", "organisation", "designation", "email", "mobile", "city", "state", "country"];
 
 router.post("/", async (req, res) => {
   const data = {};
@@ -34,8 +33,8 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ message: "Please fill in all required fields." });
   }
 
-  if (!TITLE_OPTIONS.includes(data.title)) {
-    return res.status(400).json({ message: "Please select a valid title." });
+  if (!DESIGNATION_OPTIONS.includes(data.designation)) {
+    return res.status(400).json({ message: "Please select a valid designation." });
   }
 
   if (!INDUSTRY_OPTIONS.includes(data.industry)) {
@@ -103,10 +102,9 @@ router.post("/", async (req, res) => {
 
     await pool.query(
       `INSERT INTO speaker_registrations
-        (title, first_name, last_name, organisation, designation, email, mobile, address, city, zip_code, state, country, industry, key_track, terms_accepted)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (first_name, last_name, organisation, designation, email, mobile, address, city, zip_code, state, country, industry, key_track, terms_accepted)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        data.title,
         data.firstName,
         data.lastName || null,
         data.organisation,
@@ -130,7 +128,6 @@ router.post("/", async (req, res) => {
       eventName: "Wellness India Expo 2027 - Speaker Registration",
       actionPhrase: "a speaker",
       fields: [
-        ["Title", data.title],
         ["Full Name", data.firstName],
         ["Last Name", data.lastName],
         ["Organisation", data.organisation],

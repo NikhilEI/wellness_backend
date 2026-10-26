@@ -27,4 +27,19 @@ const KEY_TRACK_OPTIONS = [
   "Health Technology & Wearables"
 ];
 
-module.exports = { INDUSTRY_OPTIONS, KEY_TRACK_OPTIONS };
+// Keep in sync with wellness_frontend_latest/src/data/visitorRegistrationOptions.ts
+const DESIGNATION_OPTIONS = [
+  "CXO / Founder / Director",
+  "Senior Management",
+  "Government Official",
+  "IT / Technology Professional",
+  "Urban Planning / Infrastructure Professional",
+  "Business Development / Sales",
+  "Marketing / Communications",
+  "Academic / Research",
+  "Media",
+  "Student",
+  "Other"
+];
+
+module.exports = { INDUSTRY_OPTIONS, KEY_TRACK_OPTIONS, DESIGNATION_OPTIONS };

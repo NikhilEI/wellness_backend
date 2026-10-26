@@ -1,7 +1,7 @@
 const express = require("express");
 const pool = require("../db/pool");
 const otpStore = require("../lib/otpStore");
-const { INDUSTRY_OPTIONS } = require("../lib/formOptions");
+const { INDUSTRY_OPTIONS, DESIGNATION_OPTIONS } = require("../lib/formOptions");
 const { checkMaxLengths } = require("../lib/validation");
 const { sendMail, buildConfirmationEmail, getBccList } = require("../lib/mailer");
 
@@ -67,6 +67,9 @@ const createHandler = ({ requireOtp }) => async (req, res) => {
   });
   if (lengthError) {
     return res.status(400).json({ message: lengthError });
+  }
+  if (data.designation && !DESIGNATION_OPTIONS.includes(data.designation)) {
+    return res.status(400).json({ message: "Please select a valid designation." });
   }
   if (!LEARN_ABOUT_OPTIONS.includes(data.learnAboutExpo)) {
     return res.status(400).json({ message: "Please select how you heard about the expo." });

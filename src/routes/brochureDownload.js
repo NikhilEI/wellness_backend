@@ -1,7 +1,7 @@
 const express = require("express");
 const pool = require("../db/pool");
 const otpStore = require("../lib/otpStore");
-const { INDUSTRY_OPTIONS } = require("../lib/formOptions");
+const { INDUSTRY_OPTIONS, DESIGNATION_OPTIONS } = require("../lib/formOptions");
 const { checkMaxLengths, COUNTRY_CODE_RE } = require("../lib/validation");
 const { sendMail, escapeHtml } = require("../lib/mailer");
 
@@ -31,8 +31,8 @@ router.post("/", async (req, res) => {
   if (data.fullName.length < 2 || data.fullName.length > 100) {
     return res.status(400).json({ message: "Please enter your full name." });
   }
-  if (data.designation.length < 2 || data.designation.length > 100) {
-    return res.status(400).json({ message: "Please enter your designation." });
+  if (!DESIGNATION_OPTIONS.includes(data.designation)) {
+    return res.status(400).json({ message: "Please select your designation." });
   }
   if (data.companyName.length < 2 || data.companyName.length > 150) {
     return res.status(400).json({ message: "Please enter your company name." });
