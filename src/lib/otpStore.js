@@ -107,9 +107,14 @@ async function send(channel, identifier, ip) {
 
   const k = key(channel, identifier);
   const gatewayConfigured = channel === "mobile" && SEND2DIGITAL_USER && SEND2DIGITAL_PASSWORD;
-  const code = gatewayConfigured ? generateOtp() : MOCK_CODE;
+  // Email always gets a real random code (emailed below); mobile uses the SMS gateway when
+  // configured, otherwise the fixed mock code.
+  const isEmail = channel === "email";
+  const code = gatewayConfigured || isEmail ? generateOtp() : MOCK_CODE;
 
-  if (gatewayConfigured) {
+  if (isEmail) {
+    sendOtpEmail(identifier, code, Math.floor(TTL_MS / 1000)).catch(() => {});
+  } else if (gatewayConfigured) {
     try {
       // identifier is "<countryCode><mobile>" (e.g. "+917982567755") — strip the "+"
       // send2.digital expects digits only.
