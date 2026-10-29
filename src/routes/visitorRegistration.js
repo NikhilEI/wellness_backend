@@ -4,7 +4,8 @@ const pool = require("../db/pool");
 const otpStore = require("../lib/otpStore");
 const { KEY_TRACK_OPTIONS, DESIGNATION_OPTIONS: DESIGNATIONS } = require("../lib/formOptions");
 const { checkMaxLengths, COUNTRY_CODE_RE } = require("../lib/validation");
-const { sendMail, buildConfirmationEmail, getBccList } = require("../lib/mailer");
+const { sendMail, getBccList } = require("../lib/mailer");
+const { buildVisitorEmail } = require("../lib/visitorEmail");
 
 const router = express.Router();
 
@@ -35,9 +36,15 @@ const PRODUCT_INTERESTS = [
 
 const ALREADY_REGISTERED_MESSAGE = "A registration already exists for this email/mobile number.";
 
-function generateRegistrationId() {
-  const random = crypto.randomBytes(4).toString("hex").toUpperCase();
-  return `WIE-${random}`;
+// "VIS" + 6 random digits (e.g. VIS416326). The column is UNIQUE, so we check for a clash
+// and retry rather than trusting the random draw.
+async function generateRegistrationId() {
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const id = `VIS${crypto.randomInt(100000, 1000000)}`;
+    const [rows] = await pool.query("SELECT 1 FROM visitor_registrations WHERE registration_id = ? LIMIT 1", [id]);
+    if (rows.length === 0) return id;
+  }
+  throw new Error("Could not generate a unique registration ID");
 }
 
 router.post("/", async (req, res) => {
@@ -137,7 +144,7 @@ router.post("/", async (req, res) => {
       return res.status(409).json({ message: ALREADY_REGISTERED_MESSAGE });
     }
 
-    const registrationId = generateRegistrationId();
+    const registrationId = await generateRegistrationId();
 
     await pool.query(
       `INSERT INTO visitor_registrations
@@ -170,35 +177,24 @@ router.post("/", async (req, res) => {
 
     res.status(201).json({ message: "Registration submitted successfully.", registrationId });
 
-    const { text, html } = buildConfirmationEmail({
+    buildVisitorEmail({
+      registrationId,
       firstName: data.firstName,
-      eventName: "Wellness India Expo 2027 - Visitor Registration",
-      actionPhrase: "a visitor",
-      fields: [
-        ["Registration ID", registrationId],
-        ["Full Name", data.firstName],
-        ["Last Name", data.lastName],
-        ["Organisation", data.organisation],
-        ["Designation", data.designation],
-        ["Department", data.department],
-        ["Email", data.email],
-        ["Mobile No", normalizedMobile],
-        ["City", data.city],
-        ["State", data.state],
-        ["Country", data.country],
-        ["Objective of Visit", data.visitObjective],
-        ["Key Track", data.keyTrack],
-        ["Product Interests", data.productInterests.join(", ")]
-      ]
-    });
-
-    sendMail({
-      to: data.email,
-      bcc: getBccList("BCC_VISITOR_REGISTRATION"),
-      subject: "Visitor Registration Confirmed — Wellness India Expo 2027",
-      text,
-      html
-    });
+      lastName: data.lastName,
+      organisation: data.organisation,
+      designation: data.designation,
+      department: data.department,
+      email: data.email,
+      mobile: normalizedMobile,
+      city: data.city,
+      state: data.state,
+      country: data.country,
+      keyTrack: data.keyTrack,
+      visitObjective: data.visitObjective,
+      productInterests: data.productInterests
+    })
+      .then((mail) => sendMail({ to: data.email, bcc: getBccList("BCC_VISITOR_REGISTRATION"), ...mail }))
+      .catch((err) => console.error("Failed to build visitor confirmation email:", err));
   } catch (err) {
     if (err.code === "ER_DUP_ENTRY") {
       // Two simultaneous submits for the same email/mobile raced past the SELECT above.
