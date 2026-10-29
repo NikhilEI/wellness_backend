@@ -1,5 +1,6 @@
 const crypto = require("crypto");
 const express = require("express");
+const QRCode = require("qrcode");
 const pool = require("../db/pool");
 const otpStore = require("../lib/otpStore");
 const { KEY_TRACK_OPTIONS, DESIGNATION_OPTIONS: DESIGNATIONS } = require("../lib/formOptions");
@@ -175,7 +176,8 @@ router.post("/", async (req, res) => {
       ]
     );
 
-    res.status(201).json({ message: "Registration submitted successfully.", registrationId });
+    const qrCode = await QRCode.toDataURL(registrationId, { width: 300, margin: 1 });
+    res.status(201).json({ message: "Registration submitted successfully.", registrationId, qrCode });
 
     buildVisitorEmail({
       registrationId,

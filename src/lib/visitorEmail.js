@@ -57,38 +57,40 @@ async function buildVisitorEmail({
 
   const qrBuffer = await QRCode.toBuffer(String(registrationId), { width: 300, margin: 1 });
 
+  const greeting = `Dear ${[firstName, lastName].filter(Boolean).join(" ")},`;
   const intro = `Thank you for your registration. The ${EXPO_NAME} expo is looking forward to welcoming you to the expo during ${VALID_DATES} at ${VENUE}.`;
 
   const text =
-    `${intro}\nLocation of Bharat Mandapam: ${VENUE_URL}\n\n` +
+    `${greeting}\n\n${intro}\nLocation of Bharat Mandapam: ${VENUE_URL}\n\n` +
     `Registration ID: ${registrationId}\nStatus: ${status}\nValid: ${VALID_DATES}\n\n` +
     `Please Note:\n${NOTES.map((n) => `- ${n}`).join("\n")}\n\n` +
     rows.map(([l, v]) => `${l}: ${v}`).join("\n");
 
   const e = escapeHtml;
   const html = `<!doctype html>
-<html><body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,Helvetica,sans-serif;color:#222;">
+<html><body style="margin:0;padding:0;background:#f4f4f4;font-family:Calibri,Arial,sans-serif;font-size:12pt;color:#222;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;"><tr><td align="center" style="padding:20px 10px;">
 <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;padding:24px;">
-<tr><td style="font-size:15px;line-height:1.5;">
+<tr><td style="font-size:12pt;line-height:1.5;">
+  <p style="margin:0 0 12px;">${e(greeting)}</p>
   <p style="margin:0 0 12px;">${e(intro)}</p>
   <p style="margin:0 0 16px;">Location of Bharat Mandapam: <a href="${VENUE_URL}">${VENUE_URL}</a></p>
 </td></tr>
-<tr><td align="center" style="padding:8px 0 16px;">
+<tr><td align="left" style="padding:8px 0 16px;">
   <img src="cid:visitor-qr" alt="Registration QR Code" width="200" height="200" style="display:block;">
 </td></tr>
-<tr><td style="font-size:15px;line-height:1.6;">
+<tr><td style="font-size:12pt;line-height:1.6;">
   <strong>Registration ID:</strong> ${e(registrationId)}<br>
   <strong>Status:</strong> ${e(status)}<br>
   <strong>Valid:</strong> ${e(VALID_DATES)}
 </td></tr>
-<tr><td style="font-size:14px;line-height:1.5;padding-top:16px;">
+<tr><td style="font-size:12pt;line-height:1.5;padding-top:16px;">
   <strong>Please Note:</strong>
   <ul style="margin:6px 0 0;padding-left:20px;">${NOTES.map((n) => `<li>${e(n)}</li>`).join("")}</ul>
 </td></tr>
 <tr><td style="padding:16px 0;"><hr style="border:0;border-top:1px dotted #999;"></td></tr>
 <tr><td>
-  <table width="100%" cellpadding="6" cellspacing="0" style="font-size:14px;border-collapse:collapse;">
+  <table width="100%" cellpadding="6" cellspacing="0" style="font-size:12pt;border-collapse:collapse;">
   ${rows
     .map(
       ([l, v]) =>
