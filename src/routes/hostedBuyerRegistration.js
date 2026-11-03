@@ -22,9 +22,10 @@ const REQUIRED_FIELDS = [
   "mobile",
   "city",
   "country",
+  "website",
   "companyProfile"
 ];
-const OPTIONAL_FIELDS = ["website", "outlets", "companyTurnover"];
+const OPTIONAL_FIELDS = ["outlets", "companyTurnover"];
 
 router.post("/", async (req, res) => {
   const data = {};
@@ -75,7 +76,7 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ message: "City must be letters only, 2-100 characters." });
   }
 
-  if (data.website && !WEBSITE_RE.test(data.website)) {
+  if (!WEBSITE_RE.test(data.website)) {
     return res.status(400).json({ message: "Please enter a valid website." });
   }
 
