@@ -23,14 +23,16 @@ const REQUIRED_FIELDS = [
   "city",
   "country",
   "website",
-  "outlets",
-  "companyTurnover",
   "companyProfile"
 ];
+const OPTIONAL_FIELDS = ["outlets", "companyTurnover"];
 
 router.post("/", async (req, res) => {
   const data = {};
   for (const key of REQUIRED_FIELDS) {
+    data[key] = String(req.body[key] || "").trim();
+  }
+  for (const key of OPTIONAL_FIELDS) {
     data[key] = String(req.body[key] || "").trim();
   }
   data.termsAccepted = Boolean(req.body.termsAccepted);
